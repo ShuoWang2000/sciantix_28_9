@@ -129,7 +129,7 @@ class inputOutput():
     
         os.chdir(folder_name)
         shutil.copy("../input_scaling_factors.txt", os.getcwd())
-        shutil.copy("../../../bin/sciantix.x", os.getcwd())
+        shutil.copy("../../../../bin/sciantix.x", os.getcwd())
         shutil.copy("../input_initial_conditions.txt", os.getcwd())
         shutil.copy("../input_settings.txt", os.getcwd())
         shutil.copy("../input_history.txt", os.getcwd())
