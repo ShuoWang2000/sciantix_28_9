@@ -33,22 +33,6 @@ class inputOutput():
         new_history[-1,0:2] = [time_end, temperature_end]
         new_history[:,0] = new_history[:,0] - time_start
 
-        # time_history_original = history_original[:,0]
-        # temperature_history_original = history_original[:,1]
-        
-        # index_start = findClosestIndex_1D(time_history_original, time_start)
-        # index_end = findClosestIndex_1D(time_history_original, time_end)
-
-        # temperature_start = interpolate_1D(time_history_original, temperature_history_original, time_start)
-        # temperature_end = interpolate_1D(time_history_original, temperature_history_original, time_end)
-
-        # new_history = history_original[index_start:index_end+1,:].copy()
-
-        # new_history[0,0:2] = [time_start, temperature_start]
-        # new_history[-1,0:2] = [time_end, temperature_end]
-        # new_history[:,0] = new_history[:,0] - time_start
-
-
         new_history = [[str(item) for item in row] for row in new_history]
         
         with open("input_history.txt", 'a') as file:
@@ -181,61 +165,69 @@ class optimization():
                     find2 = True
             if find1 == True:
                 os.chdir(folder_path1)
-                variable_selected = np.array(["He produced (at/m3)","He in grain (at/m3)", "He in intragranular solution (at/m3)", "He in intragranular bubbles (at/m3)", "He at grain boundary (at/m3)","He released (at/m3)"])
-                variable_value = getSelectedVariablesValueFromOutput(variable_selected,"output.txt")
-                self.ic_new = variable_value[-1,:]
-                RR_ic = getSelectedVariablesValueFromOutput(np.array(["He release rate (at/m3 s)"]),"output.txt")[-1]
-                self.RR_ic = RR_ic[0]
+                # variable_selected = np.array(["He produced (at/m3)","He in grain (at/m3)", "He in intragranular solution (at/m3)", "He in intragranular bubbles (at/m3)", "He at grain boundary (at/m3)","He released (at/m3)"])
+                # variable_value = getSelectedVariablesValueFromOutput(variable_selected,"output.txt")
+                # self.ic_new = variable_value[-1,:]
+                # RR_ic = getSelectedVariablesValueFromOutput(np.array(["He release rate (at/m3 s)"]),"output.txt")[-1]
+                # self.RR_ic = RR_ic[0]
+                self.folder_path_previous_optimization = folder_path1
+
             else:
                 os.chdir(folder_path2)
-                variable_selected = np.array(["He produced (at/m3)","He in grain (at/m3)", "He in intragranular solution (at/m3)", "He in intragranular bubbles (at/m3)", "He at grain boundary (at/m3)","He released (at/m3)"])
-                variable_value = getSelectedVariablesValueFromOutput(variable_selected,"output.txt")
-                self.ic_new = variable_value[-1,:]
-                RR_ic = getSelectedVariablesValueFromOutput(np.array(["He release rate (at/m3 s)"]),"output.txt")[-1]
-                self.RR_ic = RR_ic[0]
+                # variable_selected = np.array(["He produced (at/m3)","He in grain (at/m3)", "He in intragranular solution (at/m3)", "He in intragranular bubbles (at/m3)", "He at grain boundary (at/m3)","He released (at/m3)"])
+                # variable_value = getSelectedVariablesValueFromOutput(variable_selected,"output.txt")
+                # self.ic_new = variable_value[-1,:]
+                # RR_ic = getSelectedVariablesValueFromOutput(np.array(["He release rate (at/m3 s)"]),"output.txt")[-1]
+                # self.RR_ic = RR_ic[0]
+                self.folder_path_previous_optimization = folder_path2
+            variable_selected = np.array(["He produced (at/m3)","He in grain (at/m3)", "He in intragranular solution (at/m3)", "He in intragranular bubbles (at/m3)", "He at grain boundary (at/m3)","He released (at/m3)"])
+            variable_value = getSelectedVariablesValueFromOutput(variable_selected,"output.txt")
+            self.ic_new = variable_value[-1,:]
+            RR_ic = getSelectedVariablesValueFromOutput(np.array(["He release rate (at/m3 s)"]),"output.txt")[-1]
+            self.RR_ic = RR_ic[0]
 
-                # if os.path.isdir(folder_path) and keyword1 in folder_name:
-                #     os.chdir(folder_path)
-                #     variable_selected = np.array(["He produced (at/m3)","He in grain (at/m3)", "He in intragranular solution (at/m3)", "He in intragranular bubbles (at/m3)", "He at grain boundary (at/m3)","He released (at/m3)"])
-                #     variable_value = getSelectedVariablesValueFromOutput(variable_selected,"output.txt")
-                #     self.ic_new = variable_value[-1,:]
-                #     RR_ic = getSelectedVariablesValueFromOutput(np.array(["He release rate (at/m3 s)"]),"output.txt")[-1]
-                #     self.RR_ic = RR_ic[0]
-
-                #     break
-
+            self.scaling_factors = {}
+            with open("input_scaling_factors.txt", 'r') as file:
+                lines = file.readlines()
+            sf_name = []
+            i = 0
+            while i < len(lines):
+                value = float(lines[i].strip())
+                sf_name.append(lines[i + 1].strip()[len("# scaling factor - "):])
+                self.scaling_factors[sf_name[-1]] = value
+                i += 2
             
-                # elif os.path.isdir(folder_path) and keyword2 in folder_name:
-                #     os.chdir(folder_path)
-                #     variable_selected = np.array(["He produced (at/m3)","He in grain (at/m3)", "He in intragranular solution (at/m3)", "He in intragranular bubbles (at/m3)", "He at grain boundary (at/m3)","He released (at/m3)"])
-                #     variable_value = getSelectedVariablesValueFromOutput(variable_selected,"output.txt")
-                #     self.ic_new = variable_value[-1,:]
-                #     RR_ic = getSelectedVariablesValueFromOutput(np.array(["He release rate (at/m3 s)"]),"output.txt")[-1]
-                #     self.RR_ic = RR_ic[0]
-                #     break
+
 
         else:
             self.ic_new = self.ic_origin
             self.RR_ic = 0
+            self.scaling_factors = {}
+            with open("input_scaling_factors.txt", 'r') as file:
+                lines = file.readlines()
+            sf_name = []
+            i = 0
+            while i < len(lines):
+                value = float(lines[i].strip())
+                sf_name.append(lines[i + 1].strip()[len("# scaling factor - "):])
+                self.scaling_factors[sf_name[-1]] = value
+                i += 2
+
+
+
         os.chdir(current_directory)
         self.current_directory = current_directory
     
     def setScalingFactors(self,*args):
-        self.scaling_factors = {}
-        with open("input_scaling_factors.txt", 'r') as file:
-            lines = file.readlines()
-        sf_name = []
-        i = 0
-        while i < len(lines):
-            value = float(lines[i].strip())
-            sf_name.append(lines[i + 1].strip()[len("# scaling factor - "):])
-            self.scaling_factors[sf_name[-1]] = value
-            i += 2
         
         self.sf_selected = []
         for arg in args:
             self.sf_selected.append(arg)
+
         self.sf_selected_initial_value = np.ones([len(self.sf_selected)])
+        for i in range(len(self.sf_selected)):
+            self.sf_selected_initial_value[i] = self.scaling_factors[self.sf_selected[i]]
+        
         self.sf_selected_bounds = np.zeros([2,len(self.sf_selected_initial_value)])
         for i in range(len(self.sf_selected)):
             if self.sf_selected[i] == "helium diffusivity pre exponential":
@@ -584,7 +576,7 @@ def do_plot(Talip1320):
 
 Talip1320 = optimization()
 Talip1320.setCase("test_Talip2014_1320K")
-Talip1320.setStartEndTime(0,0.85)
+Talip1320.setStartEndTime(0,0.3)
 Talip1320.setInitialConditions()
 Talip1320.setScalingFactors("helium diffusivity pre exponential", "helium diffusivity activation energy","henry constant pre exponential","henry constant activation energy")
 setInputOutput = inputOutput()
@@ -593,7 +585,7 @@ do_plot(Talip1320)
 
 Talip1320 = optimization()
 Talip1320.setCase("test_Talip2014_1320K")
-Talip1320.setStartEndTime(0.85, 3.5)
+Talip1320.setStartEndTime(0.3, 0.6)
 Talip1320.setInitialConditions()
 Talip1320.setScalingFactors("helium diffusivity pre exponential", "helium diffusivity activation energy","henry constant pre exponential","henry constant activation energy")
 setInputOutput = inputOutput()
@@ -602,7 +594,7 @@ do_plot(Talip1320)
 
 Talip1320 = optimization()
 Talip1320.setCase("test_Talip2014_1320K")
-Talip1320.setStartEndTime(3.5, 5)
+Talip1320.setStartEndTime(0.6, 0.9)
 Talip1320.setInitialConditions()
 Talip1320.setScalingFactors("helium diffusivity pre exponential", "helium diffusivity activation energy","henry constant pre exponential","henry constant activation energy")
 setInputOutput = inputOutput()
