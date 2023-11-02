@@ -25,11 +25,26 @@ class experiment():
         variable_selected = np.array(["Time (h)","Temperature (K)","He fractional release (/)", "He release rate (at/m3 s)"])
         coloumnsOutput_nominal = getSelectedVariablesValueFromOutput(variable_selected,"output.txt")
         history = np.genfromtxt("input_history.txt")
+        
+        with open("input_initial_conditions.txt", 'r') as file:
+            keyword = "#	initial He (at/m3) produced"
+            line_number = 0
+            previous_line = None
+            for line in file:
+                line_number += 1
+                if keyword in line:
+                    break 
+                previous_line = line.strip() 
+        if previous_line is not None:
+            values = [float(val) for val in previous_line.split('\t')]
+            helium_storage = np.array(values)
+
+        file.close()
 
         #############
         #nomenclature
         #############
-        Helium_total = 1.68e24
+        Helium_total = helium_storage[0]
         time_exp  = cloumnsFR[:,0]
         FR_exp = cloumnsFR[:,1]
         temperature_exp = cloumnsRR[:,0]
@@ -114,7 +129,7 @@ class inputOutput():
     
         os.chdir(folder_name)
         shutil.copy("../input_scaling_factors.txt", os.getcwd())
-        shutil.copy("../sciantix.x", os.getcwd())
+        shutil.copy("../../../bin/sciantix.x", os.getcwd())
         shutil.copy("../input_initial_conditions.txt", os.getcwd())
         shutil.copy("../input_settings.txt", os.getcwd())
         shutil.copy("../input_history.txt", os.getcwd())
@@ -160,11 +175,11 @@ class optimization():
         for arg in args:
             self.sf_selected.append(arg)
         self.sf_selected_initial_value = np.ones([len(self.sf_selected)])
-        self.sf_selected_initial_value = np.array([1.79947,0.998,0.9916,0.979])
+        # self.sf_selected_initial_value = np.array([1.79947,0.998,0.9916,0.979])
         self.sf_selected_bounds = np.zeros([2,len(self.sf_selected_initial_value)])
         for i in range(len(self.sf_selected)):
             if self.sf_selected[i] == "helium diffusivity pre exponential":
-                self.sf_selected_bounds[0,i] = 0.5
+                self.sf_selected_bounds[0,i] = 0.05
                 self.sf_selected_bounds[1,i] = 19.9
             elif self.sf_selected[i] == "helium diffusivity activation energy":
                 self.sf_selected_bounds[0,i] = 0.835
@@ -208,12 +223,12 @@ class optimization():
             #     for i in range(len(RR_sciantix)):
             #         file.write(f'{error_related[i]}\n')
             # error = np.sum(error_related)
-            # for i in range(len(FR_sciantix)):
-            #     if FR_exp[i] == 0:
-            #         error_related[i] = 0
-            #     else:
-            #         error_related[i] = abs((FR_exp[i]-FR_sciantix[i])/FR_exp[i])
-            # error = np.sum(error_related)
+            for i in range(len(FR_sciantix)):
+                if FR_exp[i] == 0:
+                    error_related[i] = 0
+                else:
+                    error_related[i] = abs((FR_exp[i]-FR_sciantix[i])/FR_exp[i])
+            error = np.sum(error_related)
 
             # error = np.sum(abs((RR_exp-RR_sciantix)/(RR_exp)))
 

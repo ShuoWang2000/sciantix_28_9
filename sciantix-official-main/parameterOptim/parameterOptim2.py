@@ -944,7 +944,7 @@ def getSelectedVariablesValueFromOutput(variable_selected,source_file):
     variable_selected_value = np.zeros((l,numberOfSelectedVariable), dtype = 'float')
     for i in range(numberOfSelectedVariable):
         j = np.where(data == variable_selected[i])
-        if len(j[0]==1):
+        if len(j[0])==1:
             j = j[1]
             variablePosition[i] = j[0]
         else:
