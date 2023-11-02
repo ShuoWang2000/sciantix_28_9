@@ -181,10 +181,15 @@ class optimization():
                 # self.RR_ic = RR_ic[0]
                 self.folder_path_previous_optimization = folder_path2
             variable_selected = np.array(["He produced (at/m3)","He in grain (at/m3)", "He in intragranular solution (at/m3)", "He in intragranular bubbles (at/m3)", "He at grain boundary (at/m3)","He released (at/m3)"])
-            variable_value = getSelectedVariablesValueFromOutput(variable_selected,"output.txt")
-            self.ic_new = variable_value[-1,:]
+            self.variable_value_previous = getSelectedVariablesValueFromOutput(variable_selected,"output.txt")
+            self.ic_new = self.variable_value_previous[-1,:]
             RR_ic = getSelectedVariablesValueFromOutput(np.array(["He release rate (at/m3 s)"]),"output.txt")[-1]
             self.RR_ic = RR_ic[0]
+            
+            self.output_previous = getSelectedVariablesValueFromOutput(np.array(["Time (h)","Temperature (K)","He fractional release (/)", "He release rate (at/m3 s)"]), "output.txt")
+
+
+
 
             self.scaling_factors = {}
             with open("input_scaling_factors.txt", 'r') as file:
@@ -270,14 +275,23 @@ class optimization():
             #############
 
             #region1 : time_sciantix < max(time_exp)
-            FR[0] = self.ic_new[-1]/self.ic_new[0]
-            RR[0] = self.RR_ic
+            # FR[0] = self.ic_new[-1]/self.ic_new[0]
+            # RR[0] = self.RR_ic
+            # if time_sciantix[0] <= max(self.time_exp):
+            #     FR[0] = interpolate_1D(self.time_exp, self.FR_smoothed, time_sciantix[0])
+            #     RR[0] = interpolate_2D(self.temperature_exp, self.RR_exp, temperature_sciantix[0], self.RR_ic)
+            # else:
+            #     FR[0] = self.variable_value_previous[-1,3]
+            #     RR[0] = self.RR_ic
 
             if time_sciantix[0] > max(self.time_exp):
                 index_max_time_exp = 0
+                FR[0] = self.output_previous[-1,3]
+                RR[0] = self.RR_ic
             else:
+                FR[0] = interpolate_1D(self.time_exp, self.FR_smoothed, time_sciantix[0])
+                RR[0] = interpolate_2D(self.temperature_exp, self.RR_exp, temperature_sciantix[0], self.RR_ic)
                 index_max_time_exp = findClosestIndex_1D(time_sciantix, max(self.time_exp))
-                
                 if time_sciantix[index_max_time_exp] > max(self.time_exp):
                         index_max_time_exp = index_max_time_exp - 1
 
@@ -305,7 +319,12 @@ class optimization():
                         RR[i] = 0
                     # print(i,FR[i])
                 elif state == "plateau" and FR[i-1] < 1:
-                    slop = (FR[i-1] - FR[i-3])/(time_sciantix[i-1]-time_sciantix[i-3])
+                    if i > 1:
+                        slop = (FR[i-1] - FR[i-2])/(time_sciantix[i-1]-time_sciantix[i-2])
+
+                    else: #i == 1
+                        slop = (FR[0] - self.output_previous[-2,2])/(self.output_previous[-1,0]-self.output_previous[-2,0])
+
                     time_saturation = time_sciantix[i-1] + (1-FR[i-1])/slop
                     if time_sciantix[i] < time_saturation:
                         FR[i] = FR[i-1] + (time_sciantix[i]-time_sciantix[i-1])*slop
@@ -366,14 +385,16 @@ class optimization():
 
 
 
-        variable_selected = np.array(["Time (h)","Temperature (K)","He fractional release (/)", "He release rate (at/m3 s)"])
-        self.final_data = getSelectedVariablesValueFromOutput(variable_selected,"output.txt")
+
+        self.final_data = getSelectedVariablesValueFromOutput(np.array(["Time (h)","Temperature (K)","He fractional release (/)", "He release rate (at/m3 s)"]),"output.txt")
         self.final_data[:,0] = self.final_data[:,0]+self.time_start
         final_interpolated = np.zeros_like(self.final_data)
         final_interpolated[:,0:2] = self.final_data[:,0:2]
         final_interpolated[:,2] = self.FR
         final_interpolated[:,3] = self.RR
         self.final_interpolated = final_interpolated
+        # print(self.final_data)
+        # print(self.final_interpolated)
 
         os.chdir('..')
         os.chdir('..')
@@ -576,7 +597,7 @@ def do_plot(Talip1320):
 
 Talip1320 = optimization()
 Talip1320.setCase("test_Talip2014_1320K")
-Talip1320.setStartEndTime(0,0.3)
+Talip1320.setStartEndTime(0,1)
 Talip1320.setInitialConditions()
 Talip1320.setScalingFactors("helium diffusivity pre exponential", "helium diffusivity activation energy","henry constant pre exponential","henry constant activation energy")
 setInputOutput = inputOutput()
@@ -585,7 +606,7 @@ do_plot(Talip1320)
 
 Talip1320 = optimization()
 Talip1320.setCase("test_Talip2014_1320K")
-Talip1320.setStartEndTime(0.3, 0.6)
+Talip1320.setStartEndTime(1, 2)
 Talip1320.setInitialConditions()
 Talip1320.setScalingFactors("helium diffusivity pre exponential", "helium diffusivity activation energy","henry constant pre exponential","henry constant activation energy")
 setInputOutput = inputOutput()
@@ -594,7 +615,7 @@ do_plot(Talip1320)
 
 Talip1320 = optimization()
 Talip1320.setCase("test_Talip2014_1320K")
-Talip1320.setStartEndTime(0.6, 0.9)
+Talip1320.setStartEndTime(2, 3)
 Talip1320.setInitialConditions()
 Talip1320.setScalingFactors("helium diffusivity pre exponential", "helium diffusivity activation energy","henry constant pre exponential","henry constant activation energy")
 setInputOutput = inputOutput()
@@ -602,17 +623,17 @@ Talip1320.optimization(setInputOutput)
 do_plot(Talip1320)
 
 
-# ######
-# #online optimization-------testing....
-# ######
+######
+#online optimization-------testing....
+######
 # t0 = 0
-# number_of_interval = 20
+# number_of_interval = 3
 # time_points = np.zeros((number_of_interval+1,1))
 # sf_optimized = np.ones((number_of_interval+1,4))
 # error_optimized = np.zeros((number_of_interval+1,1))
 # results_data = np.empty((number_of_interval+2,6),dtype = object)
-# final_data = []
-# final_data_interpolated = []
+# final_data = np.empty((0,4))
+# final_data_interpolated = np.empty((0,4))
 # for i in range(1,number_of_interval+1):
 
 #     Talip1320 = optimization()
@@ -628,17 +649,18 @@ do_plot(Talip1320)
 #     Talip1320.optimization(setInputOutput)
 #     results_data[i+1,1:] = Talip1320.optimization_results
 #     results_data[i+1,0] = time_points[i][0]
+#     final_data = np.vstack((final_data, Talip1320.final_data))
+#     final_data_interpolated = np.vstack((final_data_interpolated, Talip1320.final_interpolated))
 
-#     # do_plot(Talip1320)
-#     for row in Talip1320.final_data:
-#         final_data = np.concatenate((final_data, [row]), axis=0)
+#     # for row in Talip1320.final_data:
+#     #     final_data = np.concatenate((final_data, [row]), axis=0)
 
 
 
-#     for row in Talip1320.final_interpolated:
-#         final_data_interpolated = np.concatenate((final_data_interpolated, [row]), axis=0)
-#     final_data = np.array(final_data,dtype = float)
-#     final_data_interpolated = np.array(final_data_interpolated, dtype = float)
+#     # for row in Talip1320.final_interpolated:
+#     #     final_data_interpolated = np.concatenate((final_data_interpolated, [row]), axis=0)
+#     # final_data = np.array(final_data,dtype = float)
+#     # final_data_interpolated = np.array(final_data_interpolated, dtype = float)
 
 
 # results_data[0,0] = "time"
@@ -717,3 +739,43 @@ do_plot(Talip1320)
 
 # os.chdir("..")
 # os.chdir("..")
+
+
+
+
+#######
+# all start from 0
+#######
+# t0 = 0
+# number_of_interval = 10
+# time_points = np.zeros((number_of_interval+1,1))
+# sf_optimized = np.ones((number_of_interval+1,4))
+# error_optimized = np.zeros((number_of_interval+1,1))
+# results_data = np.empty((number_of_interval+2,6),dtype = object)
+# for i in range(1,number_of_interval+1):
+
+#     Talip1320 = optimization()
+#     Talip1320.setCase("test_Talip2014_1320K")
+
+#     tf = Talip1320.time_history_original[-1]
+#     time_points[i] = time_points[i-1]+(tf-t0)/number_of_interval
+#     time_points[i] = np.round(time_points[i],3)
+#     Talip1320.setStartEndTime(0,time_points[i][0])
+#     Talip1320.setInitialConditions()
+#     Talip1320.setScalingFactors("helium diffusivity pre exponential", "helium diffusivity activation energy","henry constant pre exponential","henry constant activation energy")
+#     setInputOutput = inputOutput()
+#     Talip1320.optimization(setInputOutput)
+#     results_data[i+1,1:] = Talip1320.optimization_results
+#     results_data[i+1,0] = time_points[i][0]
+
+
+# results_data[0,0] = "time"
+# results_data[0,1:5] = Talip1320.sf_selected
+# results_data[0,5] = "error"
+# results_data[1,:] = [0,1.0,1.0,1.0,1.0,0]
+
+
+# with open(f"optimization_{Talip1320.caseName}_{number_of_interval}.txt", 'w') as file:
+#     for row in results_data:
+#         line = "\t".join(map(str, row))
+#         file.write(line + "\n")

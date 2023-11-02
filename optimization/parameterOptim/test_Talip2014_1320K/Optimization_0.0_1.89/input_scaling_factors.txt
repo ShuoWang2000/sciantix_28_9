@@ -1,0 +1,24 @@
+1.0
+# scaling factor - resolution rate
+1.0
+# scaling factor - trapping rate
+1.0
+# scaling factor - nucleation rate
+1.0
+# scaling factor - diffusivity
+1.0
+# scaling factor - screw parameter
+1.0
+# scaling factor - span parameter
+1.0
+# scaling factor - cent parameter
+1.0
+# scaling factor - helium production rate
+4.164101613507238
+# scaling factor - helium diffusivity pre exponential
+1.0011119766623395
+# scaling factor - helium diffusivity activation energy
+0.9891454681039553
+# scaling factor - henry constant pre exponential
+1.0017748046381685
+# scaling factor - henry constant activation energy
