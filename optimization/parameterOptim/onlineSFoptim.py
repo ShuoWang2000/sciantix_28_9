@@ -165,20 +165,12 @@ class optimization():
                     find2 = True
             if find1 == True:
                 os.chdir(folder_path1)
-                # variable_selected = np.array(["He produced (at/m3)","He in grain (at/m3)", "He in intragranular solution (at/m3)", "He in intragranular bubbles (at/m3)", "He at grain boundary (at/m3)","He released (at/m3)"])
-                # variable_value = getSelectedVariablesValueFromOutput(variable_selected,"output.txt")
-                # self.ic_new = variable_value[-1,:]
-                # RR_ic = getSelectedVariablesValueFromOutput(np.array(["He release rate (at/m3 s)"]),"output.txt")[-1]
-                # self.RR_ic = RR_ic[0]
+
                 self.folder_path_previous_optimization = folder_path1
 
             else:
                 os.chdir(folder_path2)
-                # variable_selected = np.array(["He produced (at/m3)","He in grain (at/m3)", "He in intragranular solution (at/m3)", "He in intragranular bubbles (at/m3)", "He at grain boundary (at/m3)","He released (at/m3)"])
-                # variable_value = getSelectedVariablesValueFromOutput(variable_selected,"output.txt")
-                # self.ic_new = variable_value[-1,:]
-                # RR_ic = getSelectedVariablesValueFromOutput(np.array(["He release rate (at/m3 s)"]),"output.txt")[-1]
-                # self.RR_ic = RR_ic[0]
+
                 self.folder_path_previous_optimization = folder_path2
             variable_selected = np.array(["He produced (at/m3)","He in grain (at/m3)", "He in intragranular solution (at/m3)", "He in intragranular bubbles (at/m3)", "He at grain boundary (at/m3)","He released (at/m3)"])
             self.variable_value_previous = getSelectedVariablesValueFromOutput(variable_selected,"output.txt")
@@ -274,20 +266,11 @@ class optimization():
             #interpolate: inserted time_sciantix -----> FR and RR 
             #############
 
-            #region1 : time_sciantix < max(time_exp)
-            # FR[0] = self.ic_new[-1]/self.ic_new[0]
-            # RR[0] = self.RR_ic
-            # if time_sciantix[0] <= max(self.time_exp):
-            #     FR[0] = interpolate_1D(self.time_exp, self.FR_smoothed, time_sciantix[0])
-            #     RR[0] = interpolate_2D(self.temperature_exp, self.RR_exp, temperature_sciantix[0], self.RR_ic)
-            # else:
-            #     FR[0] = self.variable_value_previous[-1,3]
-            #     RR[0] = self.RR_ic
-
             if time_sciantix[0] > max(self.time_exp):
                 index_max_time_exp = 0
-                FR[0] = self.output_previous[-1,3]
+                FR[0] = self.output_previous[-1,2]
                 RR[0] = self.RR_ic
+                # print(FR[0])
             else:
                 FR[0] = interpolate_1D(self.time_exp, self.FR_smoothed, time_sciantix[0])
                 RR[0] = interpolate_2D(self.temperature_exp, self.RR_exp, temperature_sciantix[0], self.RR_ic)
@@ -597,148 +580,148 @@ def do_plot(Talip1320):
 
 Talip1320 = optimization()
 Talip1320.setCase("test_Talip2014_1320K")
-Talip1320.setStartEndTime(0,1)
+Talip1320.setStartEndTime(3.78,5.67)
 Talip1320.setInitialConditions()
 Talip1320.setScalingFactors("helium diffusivity pre exponential", "helium diffusivity activation energy","henry constant pre exponential","henry constant activation energy")
 setInputOutput = inputOutput()
 Talip1320.optimization(setInputOutput)
 do_plot(Talip1320)
 
-Talip1320 = optimization()
-Talip1320.setCase("test_Talip2014_1320K")
-Talip1320.setStartEndTime(1, 2)
-Talip1320.setInitialConditions()
-Talip1320.setScalingFactors("helium diffusivity pre exponential", "helium diffusivity activation energy","henry constant pre exponential","henry constant activation energy")
-setInputOutput = inputOutput()
-Talip1320.optimization(setInputOutput)
-do_plot(Talip1320)
+# Talip1320 = optimization()
+# Talip1320.setCase("test_Talip2014_1320K")
+# Talip1320.setStartEndTime(1, 2)
+# Talip1320.setInitialConditions()
+# Talip1320.setScalingFactors("helium diffusivity pre exponential", "helium diffusivity activation energy","henry constant pre exponential","henry constant activation energy")
+# setInputOutput = inputOutput()
+# Talip1320.optimization(setInputOutput)
+# do_plot(Talip1320)
 
-Talip1320 = optimization()
-Talip1320.setCase("test_Talip2014_1320K")
-Talip1320.setStartEndTime(2, 3)
-Talip1320.setInitialConditions()
-Talip1320.setScalingFactors("helium diffusivity pre exponential", "helium diffusivity activation energy","henry constant pre exponential","henry constant activation energy")
-setInputOutput = inputOutput()
-Talip1320.optimization(setInputOutput)
-do_plot(Talip1320)
+# Talip1320 = optimization()
+# Talip1320.setCase("test_Talip2014_1320K")
+# Talip1320.setStartEndTime(2, 3)
+# Talip1320.setInitialConditions()
+# Talip1320.setScalingFactors("helium diffusivity pre exponential", "helium diffusivity activation energy","henry constant pre exponential","henry constant activation energy")
+# setInputOutput = inputOutput()
+# Talip1320.optimization(setInputOutput)
+# do_plot(Talip1320)
 
 
 ######
 #online optimization-------testing....
 ######
-# t0 = 0
-# number_of_interval = 3
-# time_points = np.zeros((number_of_interval+1,1))
-# sf_optimized = np.ones((number_of_interval+1,4))
-# error_optimized = np.zeros((number_of_interval+1,1))
-# results_data = np.empty((number_of_interval+2,6),dtype = object)
-# final_data = np.empty((0,4))
-# final_data_interpolated = np.empty((0,4))
-# for i in range(1,number_of_interval+1):
+t0 = 0
+number_of_interval = 3
+time_points = np.zeros((number_of_interval+1,1))
+sf_optimized = np.ones((number_of_interval+1,4))
+error_optimized = np.zeros((number_of_interval+1,1))
+results_data = np.empty((number_of_interval+2,6),dtype = object)
+final_data = np.empty((0,4))
+final_data_interpolated = np.empty((0,4))
+for i in range(1,number_of_interval+1):
 
-#     Talip1320 = optimization()
-#     Talip1320.setCase("test_Talip2014_1320K")
+    Talip1320 = optimization()
+    Talip1320.setCase("test_Talip2014_1320K")
 
-#     tf = Talip1320.time_history_original[-1]
-#     time_points[i] = time_points[i-1]+(tf-t0)/number_of_interval
-#     time_points[i] = np.round(time_points[i],3)
-#     Talip1320.setStartEndTime(time_points[i-1][0],time_points[i][0])
-#     Talip1320.setInitialConditions()
-#     Talip1320.setScalingFactors("helium diffusivity pre exponential", "helium diffusivity activation energy","henry constant pre exponential","henry constant activation energy")
-#     setInputOutput = inputOutput()
-#     Talip1320.optimization(setInputOutput)
-#     results_data[i+1,1:] = Talip1320.optimization_results
-#     results_data[i+1,0] = time_points[i][0]
-#     final_data = np.vstack((final_data, Talip1320.final_data))
-#     final_data_interpolated = np.vstack((final_data_interpolated, Talip1320.final_interpolated))
+    tf = Talip1320.time_history_original[-1]
+    time_points[i] = time_points[i-1]+(tf-t0)/number_of_interval
+    time_points[i] = np.round(time_points[i],3)
+    Talip1320.setStartEndTime(time_points[i-1][0],time_points[i][0])
+    Talip1320.setInitialConditions()
+    Talip1320.setScalingFactors("helium diffusivity pre exponential", "helium diffusivity activation energy","henry constant pre exponential","henry constant activation energy")
+    setInputOutput = inputOutput()
+    Talip1320.optimization(setInputOutput)
+    results_data[i+1,1:] = Talip1320.optimization_results
+    results_data[i+1,0] = time_points[i][0]
+    final_data = np.vstack((final_data, Talip1320.final_data))
+    final_data_interpolated = np.vstack((final_data_interpolated, Talip1320.final_interpolated))
 
-#     # for row in Talip1320.final_data:
-#     #     final_data = np.concatenate((final_data, [row]), axis=0)
-
-
-
-#     # for row in Talip1320.final_interpolated:
-#     #     final_data_interpolated = np.concatenate((final_data_interpolated, [row]), axis=0)
-#     # final_data = np.array(final_data,dtype = float)
-#     # final_data_interpolated = np.array(final_data_interpolated, dtype = float)
+    # for row in Talip1320.final_data:
+    #     final_data = np.concatenate((final_data, [row]), axis=0)
 
 
-# results_data[0,0] = "time"
-# results_data[0,1:5] = Talip1320.sf_selected
-# results_data[0,5] = "error"
-# results_data[1,:] = [0,1.0,1.0,1.0,1.0,0]
+
+    # for row in Talip1320.final_interpolated:
+    #     final_data_interpolated = np.concatenate((final_data_interpolated, [row]), axis=0)
+    # final_data = np.array(final_data,dtype = float)
+    # final_data_interpolated = np.array(final_data_interpolated, dtype = float)
 
 
-# with open(f"optimization_{Talip1320.caseName}_{number_of_interval}.txt", 'w') as file:
-#     for row in results_data:
-#         line = "\t".join(map(str, row))
-#         file.write(line + "\n")
-
-# os.chdir("test_Talip2014_1320K")
-# cloumnsFR  = np.genfromtxt("Talip2014_release_data.txt",dtype = 'float',delimiter='\t')
-# cloumnsRR = np.genfromtxt("Talip2014_rrate_data.txt",dtype = 'float',delimiter='\t')
-# variable_selected = np.array(["Time (h)","Temperature (K)","He fractional release (/)", "He release rate (at/m3 s)"])
-# coloumnsOutput_nominal = getSelectedVariablesValueFromOutput(variable_selected,"output.txt")
-
-# time_exp  = cloumnsFR[:,0]
-# FR_exp = cloumnsFR[:,1]
-# temperature_exp = cloumnsRR[:,0]
-# RR_exp = cloumnsRR[:,1]
-
-# time_sciantix = coloumnsOutput_nominal[:,0]
-# temperature_sciantix = coloumnsOutput_nominal[:,1]
-# FR_nominal = coloumnsOutput_nominal[:,2]
-# RR_nominal = coloumnsOutput_nominal[:,3]
-
-# FR_interpolated = final_data_interpolated[:,2]
-# RR_interpolated = final_data_interpolated[:,3]
+results_data[0,0] = "time"
+results_data[0,1:5] = Talip1320.sf_selected
+results_data[0,5] = "error"
+results_data[1,:] = [0,1.0,1.0,1.0,1.0,0]
 
 
-# time_new = final_data[:,0]
-# temperature_new = final_data[:,1]
-# FR_new = final_data[:,2]
-# RR_new = final_data[:,3]
+with open(f"optimization_{Talip1320.caseName}_{number_of_interval}.txt", 'w') as file:
+    for row in results_data:
+        line = "\t".join(map(str, row))
+        file.write(line + "\n")
 
-# fig, ax = plt.subplots(1,2)
-# plt.subplots_adjust(left=0.1,
-#                     bottom=0.1,
-#                     right=0.9,
-#                     top=0.9,
-#                     wspace=0.34,
-#                     hspace=0.4)
+os.chdir("test_Talip2014_1320K")
+cloumnsFR  = np.genfromtxt("Talip2014_release_data.txt",dtype = 'float',delimiter='\t')
+cloumnsRR = np.genfromtxt("Talip2014_rrate_data.txt",dtype = 'float',delimiter='\t')
+variable_selected = np.array(["Time (h)","Temperature (K)","He fractional release (/)", "He release rate (at/m3 s)"])
+coloumnsOutput_nominal = getSelectedVariablesValueFromOutput(variable_selected,"output.txt")
 
-# ax[0].scatter(time_exp, FR_exp, marker = '.', c = '#B3B3B3', label='Data from Talip et al. (2014)')
-# ax[0].scatter(time_sciantix, FR_nominal,marker = 'x' ,color = '#98E18D', label='SCIANTIX 2.0 Nominal')
-# ax[0].scatter(time_new, FR_new, marker = 'x',color = 'red',label = f'optimized_{Talip1320.time_start}_{Talip1320.time_end}')
-# ax[0].scatter(time_new, FR_interpolated, marker = 'x',color = 'blue',label = 'interpolated')
-# axT = ax[0].twinx()
-# axT.set_ylabel('Temperature (K)')
-# axT.plot(time_sciantix, temperature_sciantix, 'r', linewidth=1, label="Temperature")
+time_exp  = cloumnsFR[:,0]
+FR_exp = cloumnsFR[:,1]
+temperature_exp = cloumnsRR[:,0]
+RR_exp = cloumnsRR[:,1]
 
-# ax[0].set_xlabel('Time (h)')
-# ax[0].set_ylabel('Helium fractional release (/)')
-# h1, l1 = ax[0].get_legend_handles_labels()
-# h2, l2 = axT.get_legend_handles_labels()
-# # ax[0].legend(h1+h2, l1+l2)
-# ax[0].legend(loc = 'upper left')
+time_sciantix = coloumnsOutput_nominal[:,0]
+temperature_sciantix = coloumnsOutput_nominal[:,1]
+FR_nominal = coloumnsOutput_nominal[:,2]
+RR_nominal = coloumnsOutput_nominal[:,3]
 
-# """ Plot: Helium release rate """
-# ax[1].scatter(temperature_exp, RR_exp, marker = '.', c = '#B3B3B3', label='Data from Talip et al. (2014)')
-# ax[1].scatter(temperature_sciantix, RR_nominal, marker = 'x',color = '#98E18D', label='SCIANTIX 2.0 Nominal')
-# ax[1].scatter(temperature_new, RR_new, marker = 'x', color = 'red',label = f'optimized_{Talip1320.time_start}_{Talip1320.time_end}')
-# ax[1].scatter(temperature_new, RR_interpolated, marker = 'x', color = 'blue',label = 'interpolated')
+FR_interpolated = final_data_interpolated[:,2]
+RR_interpolated = final_data_interpolated[:,3]
 
 
-# # ax.set_title(file + ' - Release rate')
-# ax[1].set_xlabel('Temperature (K)')
-# ax[1].set_ylabel('Helium release rate (at m${}^{-3}$ s${}^{-1}$)')
-# ax[1].legend()
+time_new = final_data[:,0]
+temperature_new = final_data[:,1]
+FR_new = final_data[:,2]
+RR_new = final_data[:,3]
 
-# # plt.savefig(file + '.png')
-# plt.show()
+fig, ax = plt.subplots(1,2)
+plt.subplots_adjust(left=0.1,
+                    bottom=0.1,
+                    right=0.9,
+                    top=0.9,
+                    wspace=0.34,
+                    hspace=0.4)
 
-# os.chdir("..")
-# os.chdir("..")
+ax[0].scatter(time_exp, FR_exp, marker = '.', c = '#B3B3B3', label='Data from Talip et al. (2014)')
+ax[0].scatter(time_sciantix, FR_nominal,marker = 'x' ,color = '#98E18D', label='SCIANTIX 2.0 Nominal')
+ax[0].scatter(time_new, FR_new, marker = 'x',color = 'red',label = f'optimized_{Talip1320.time_start}_{Talip1320.time_end}')
+ax[0].scatter(time_new, FR_interpolated, marker = 'x',color = 'blue',label = 'interpolated')
+axT = ax[0].twinx()
+axT.set_ylabel('Temperature (K)')
+axT.plot(time_sciantix, temperature_sciantix, 'r', linewidth=1, label="Temperature")
+
+ax[0].set_xlabel('Time (h)')
+ax[0].set_ylabel('Helium fractional release (/)')
+h1, l1 = ax[0].get_legend_handles_labels()
+h2, l2 = axT.get_legend_handles_labels()
+# ax[0].legend(h1+h2, l1+l2)
+ax[0].legend(loc = 'upper left')
+
+""" Plot: Helium release rate """
+ax[1].scatter(temperature_exp, RR_exp, marker = '.', c = '#B3B3B3', label='Data from Talip et al. (2014)')
+ax[1].scatter(temperature_sciantix, RR_nominal, marker = 'x',color = '#98E18D', label='SCIANTIX 2.0 Nominal')
+ax[1].scatter(temperature_new, RR_new, marker = 'x', color = 'red',label = f'optimized_{Talip1320.time_start}_{Talip1320.time_end}')
+ax[1].scatter(temperature_new, RR_interpolated, marker = 'x', color = 'blue',label = 'interpolated')
+
+
+# ax.set_title(file + ' - Release rate')
+ax[1].set_xlabel('Temperature (K)')
+ax[1].set_ylabel('Helium release rate (at m${}^{-3}$ s${}^{-1}$)')
+ax[1].legend()
+
+# plt.savefig(file + '.png')
+plt.show()
+
+os.chdir("..")
+os.chdir("..")
 
 
 
