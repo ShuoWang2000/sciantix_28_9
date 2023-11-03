@@ -45,18 +45,34 @@ class inputOutput():
                     file.write(line + "\n")
 
 
-    def writeInputInitialConditions(self, ic_new):
+    def writeInputInitialConditions(self, ic_new, ic_grainRadius, ic_intraGrainBubbleRadius ):
         with open("input_initial_conditions.txt", 'r') as file:
             lines = file.readlines()
 
-        keyword = "#	initial He (at/m3) produced, intragranular, intragranular in solution, intragranular in bubbles, grain boundary, released"
-
+        keyword1 = "#	initial He (at/m3) produced, intragranular, intragranular in solution, intragranular in bubbles, grain boundary, released"
+        keyword2 = "#	initial grain radius (m)"
+        keyword3 = "# initial intragranular bubble concentration (at/m3), radius (m)"
+        keyword = np.array([keyword1, keyword2, keyword3])
         for i, line in enumerate(lines):
-            if keyword in line:
-                ic_str = '\t'.join(map(str, ic_new))
-                lines[i - 1] = ic_str + '\n'  
+            if keyword1 in line:
+                ic_1 = '\t'.join(map(str, ic_new))
+                lines[i - 1] = ic_1 + '\n'  
 
                 break
+        for j, line in enumerate(lines):
+            if keyword2 in line:
+                ic_2 = ic_grainRadius
+                lines[j - 1] = str(ic_2) + '\n'  
+
+                break
+        for k, line in enumerate(lines):
+            if keyword3 in line:
+                ic_3 = '  '.join(map(str, ic_intraGrainBubbleRadius))
+                lines[k - 1] = ic_3 + '\n'  
+
+                break
+
+
         with open("input_initial_conditions.txt", 'w') as file:
             file.writelines(lines)
 
@@ -104,8 +120,13 @@ class optimization():
         self.temperature_exp = cloumnsRR[:,0]
         self.RR_exp = cloumnsRR[:,1]
         
-        self.FR_smoothed = moving_average(self.FR_exp,100)
+        FR_smoothed = moving_average(self.FR_exp,100)
+        for i in range(len(FR_smoothed)):
+            if FR_smoothed[i] < 0:
+                FR_smoothed[i] = 0
         
+        self.FR_smoothed = FR_smoothed
+
         self.history_original = history
         self.time_history_original = self.history_original[:,0]
         self.temperature_history_original = self.history_original[:,1]
@@ -117,7 +138,7 @@ class optimization():
         if self.time_start !=0:
             folder_name = f"Optimization_{time_start}__{time_end}"
         else:
-            folder_name = f"Optimization_{time_start}_{time_end}"
+            folder_name = f"Optimization_0_{time_end}"
        
         if not os.path.exists(folder_name):
             os.makedirs(folder_name)
@@ -132,27 +153,46 @@ class optimization():
         shutil.copy("../input_settings.txt", os.getcwd())
 
     def setInitialConditions(self):
+        ####
+        # find the initial Helium data
+        ####
         current_directory = os.getcwd()
+        parent_directory = os.path.dirname(current_directory)
+        # with open("input_initial_conditions.txt", 'r') as file:
+        #     keyword1 = "#	initial He (at/m3) produced"
+        #     line_number = 0
+        #     previous_line = None
+        #     for line in file:
+        #         line_number += 1
+        #         if keyword1 in line:
+        #             break 
+        #         previous_line = line.strip() 
+        # if previous_line is not None:
+        #     values = [float(val) for val in previous_line.split('\t')]
+        #     ic_origin = np.array(values)
+        ic_origin = readICfromInputInitialConditions("#	initial He (at/m3) produced")
+        ic_grainRadius_origin = readICfromInputInitialConditions("#	initial grain radius (m)")[0]
+        # ic_intraGrainBubbleRadius_origin = readICfromInputInitialConditions("# initial intragranular bubble concentration (at/m3), radius (m)")
         with open("input_initial_conditions.txt", 'r') as file:
-            keyword = "#	initial He (at/m3) produced"
+            intraGBR = "# initial intragranular bubble concentration (at/m3), radius (m)"
             line_number = 0
             previous_line = None
             for line in file:
                 line_number += 1
-                if keyword in line:
+                if intraGBR in line:
                     break 
                 previous_line = line.strip() 
         if previous_line is not None:
-            values = [float(val) for val in previous_line.split('\t')]
-            self.ic_origin = np.array(values)
+            values = [float(val) for val in previous_line.split('  ')]
+            ic_intraGrainBubbleRadius_origin = np.array(values)
 
-        file.close()
 
+        ####
+        #   find the previous optimization directory
+        ###
         if self.time_start != 0:
             keyword1 = f"__{self.time_start}"
-            # keyword2 = f"Optimization_0_{self.time_start}"
-            keyword2 = f"0_{self.time_start}"
-            parent_directory = os.path.dirname(current_directory)
+            keyword2 = f"Optimization_0_{self.time_start}"
             find1 = False
             find2 = False
             for folder_name in os.listdir(parent_directory):
@@ -163,26 +203,46 @@ class optimization():
                 elif os.path.isdir(folder_path) and keyword2 in folder_name:
                     folder_path2 = folder_path
                     find2 = True
+            
             if find1 == True:
                 os.chdir(folder_path1)
-
                 self.folder_path_previous_optimization = folder_path1
 
             else:
                 os.chdir(folder_path2)
-
                 self.folder_path_previous_optimization = folder_path2
-            variable_selected = np.array(["He produced (at/m3)","He in grain (at/m3)", "He in intragranular solution (at/m3)", "He in intragranular bubbles (at/m3)", "He at grain boundary (at/m3)","He released (at/m3)"])
-            self.variable_value_previous = getSelectedVariablesValueFromOutput(variable_selected,"output.txt")
-            self.ic_new = self.variable_value_previous[-1,:]
-            RR_ic = getSelectedVariablesValueFromOutput(np.array(["He release rate (at/m3 s)"]),"output.txt")[-1]
-            self.RR_ic = RR_ic[0]
-            
+            ic_name = np.array(["He produced (at/m3)","He in grain (at/m3)", "He in intragranular solution (at/m3)", "He in intragranular bubbles (at/m3)", "He at grain boundary (at/m3)","He released (at/m3)"])
+            ic_value_previous = getSelectedVariablesValueFromOutput(ic_name,"output.txt")
+            #####
+            # ic for helium storage
+            #####
+            ic_new = ic_value_previous[-1,:]
+
+            #####
+            # ic for grain radius
+            #####
+            ic_grainRadius = getSelectedVariablesValueFromOutput(np.array(["Grain radius (m)"]),"output.txt")[-1][0]
+
+            #####
+            # ic for intragrainular bubble radius
+            #####
+            ic_intraGrainBubbleRadius = getSelectedVariablesValueFromOutput(np.array(["Intragranular bubble concentration (bub/m3)","Intragranular bubble radius (m)"]),"output.txt")[-1,:]
+            ####
+            # ic for RR and FR
+            ####
             self.output_previous = getSelectedVariablesValueFromOutput(np.array(["Time (h)","Temperature (K)","He fractional release (/)", "He release rate (at/m3 s)"]), "output.txt")
+            RR_ic = self.output_previous[-1,3]
+            FR_ic = self.output_previous[-1,2]
+            
+            self.interpolated_previous = np.genfromtxt("interpolated_data.txt",dtype = 'float',delimiter='\t')
+            RR_interpolated_ic = self.interpolated_previous[-1,1]
+            if RR_interpolated_ic < 0:
+                RR_interpolated_ic = 0
+            FR_interpolated_ic = self.interpolated_previous[-1,0]
 
-
-
-
+            ####
+            # ic for input_scaling_factors.txt
+            ####
             self.scaling_factors = {}
             with open("input_scaling_factors.txt", 'r') as file:
                 lines = file.readlines()
@@ -195,8 +255,15 @@ class optimization():
                 i += 2
             
         else:
-            self.ic_new = self.ic_origin
-            self.RR_ic = 0
+            os.chdir(current_directory)
+            ic_new = ic_origin
+            ic_grainRadius = ic_grainRadius_origin
+            ic_intraGrainBubbleRadius = ic_intraGrainBubbleRadius_origin
+            RR_ic = 0
+            FR_ic = 0
+            RR_interpolated_ic = 0
+            FR_interpolated_ic = 0
+
             self.scaling_factors = {}
             with open("input_scaling_factors.txt", 'r') as file:
                 lines = file.readlines()
@@ -209,6 +276,14 @@ class optimization():
                 i += 2
 
 
+        self.ic_new = ic_new
+        self.ic_grainRadius = ic_grainRadius
+        self.ic_intraGrainBubbleRadius = ic_intraGrainBubbleRadius
+        self.RR_ic = RR_ic
+        self.FR_ic = FR_ic
+        self.RR_interpolated_ic = RR_interpolated_ic
+        self.FR_interpolated_ic = FR_interpolated_ic
+        
 
         os.chdir(current_directory)
         self.current_directory = current_directory
@@ -243,91 +318,141 @@ class optimization():
         self.bounds = Bounds(self.sf_selected_bounds[0,:],self.sf_selected_bounds[1,:])
 
     def optimization(self,inputOutput):
+        
+
+
         inputOutput.writeInputHistory(self.history_original, self.time_start, self.time_end)
-        inputOutput.writeInputInitialConditions(self.ic_new)
+        inputOutput.writeInputInitialConditions(self.ic_new, self.ic_grainRadius, self.ic_intraGrainBubbleRadius)
         def costFunction(sf_selected_value):
             inputOutput.writeInputScalingFactors(self.scaling_factors,self.sf_selected,sf_selected_value)
             inputOutput.readOutput()
             #####
             #match data
             ####
-            FR = np.zeros_like(inputOutput.FR_sciantix)
-            RR = np.zeros_like(inputOutput.RR_sciantix)
+            FR_interpolated = np.zeros_like(inputOutput.FR_sciantix)
+            RR_interpolated = np.zeros_like(inputOutput.RR_sciantix)
             RR_fr = np.zeros_like(inputOutput.RR_sciantix)
             time_sciantix = inputOutput.time_sciantix + self.time_start
             temperature_sciantix = inputOutput.temperature_sciantix
             FR_sciantix = inputOutput.FR_sciantix
+            dFR_dt_sciantix = np.zeros_like(inputOutput.RR_sciantix)
+            if self.time_start == 0.0:
+                dFR_dt_sciantix[0] = 0
+            else:
+                dFR_dt_sciantix[0] = (self.output_previous[-1,2]-self.output_previous[-2,2])/(self.output_previous[-1,0]-self.output_previous[-2,0])
+            for i in range(1, len(FR_sciantix)):
+                if time_sciantix[i] == time_sciantix[i-1]:
+                    dFR_dt_sciantix[i] = dFR_dt_sciantix[i-1]
+                else:
+                    dFR_dt_sciantix[i] = (FR_sciantix[i] - FR_sciantix[i-1])/(time_sciantix[i]-time_sciantix[i-1])
+            
+            
             RR_sciantix = inputOutput.RR_sciantix
-
+            
+            dFR_dt = np.zeros_like(inputOutput.FR_sciantix)
+            dFR_dtdt = np.zeros_like(inputOutput.FR_sciantix)
             Helium_total = self.ic_new[0]
             #############
             #interpolate: inserted time_sciantix -----> FR and RR 
             #############
+            FR_interpolated[0] = self.FR_interpolated_ic
+            
+            RR_interpolated[0] = self.RR_interpolated_ic
+            # first_derivative = np.gradient(self.interpolated_previous[:,0], self.output_previous[:,0])
+            # second_derivative = np.gradient(first_derivative, self.output_previous[:,0])
+            # dFR_dt[0] = first_derivative[-1]
+            # dFR_dtdt[0] = second_derivative[-1]
 
             if time_sciantix[0] > max(self.time_exp):
                 index_max_time_exp = 0
-                FR[0] = self.output_previous[-1,2]
-                RR[0] = self.RR_ic
-                # print(FR[0])
-            else:
-                FR[0] = interpolate_1D(self.time_exp, self.FR_smoothed, time_sciantix[0])
-                RR[0] = interpolate_2D(self.temperature_exp, self.RR_exp, temperature_sciantix[0], self.RR_ic)
+
+
+            else: #time_sciantix[0] < max(self.time_exp)
                 index_max_time_exp = findClosestIndex_1D(time_sciantix, max(self.time_exp))
                 if time_sciantix[index_max_time_exp] > max(self.time_exp):
                         index_max_time_exp = index_max_time_exp - 1
-
-                for i in range(1,index_max_time_exp + 1):
-                    if time_sciantix[i] == time_sciantix[i-1]:
-                        FR[i] = FR[i-1]
-                        RR_fr[i] = RR_fr[i-1]
-                        RR[i] = RR[i-1]
-                    else:
-                        FR[i] = interpolate_1D(self.time_exp, self.FR_smoothed, time_sciantix[i])
-                        RR_fr[i] =(FR[i]-FR[i-1])/(time_sciantix[i]-time_sciantix[i-1])/3600*Helium_total
-                        RR[i] = interpolate_2D(self.temperature_exp, self.RR_exp, temperature_sciantix[i], RR_fr[i])
+                if index_max_time_exp == 0:
+                    pass
+                else:
+                    for i in range(1,index_max_time_exp + 1):
+                        if time_sciantix[i] == time_sciantix[i-1]:
+                            # this is because in sciantix, there are some same time points
+                            FR_interpolated[i] = FR_interpolated[i-1]
+                            RR_fr[i] = RR_fr[i-1]
+                            RR_interpolated[i] = RR_interpolated[i-1]
+                        else:
+                            FR_interpolated[i] = interpolate_1D(self.time_exp, self.FR_smoothed, time_sciantix[i])
+                            if FR_interpolated[i] < FR_interpolated[i-1]:
+                                FR_interpolated[i] = FR_interpolated[i-1]
+                            RR_fr[i] =(FR_interpolated[i]-FR_interpolated[i-1])/(time_sciantix[i]-time_sciantix[i-1])/3600*Helium_total
+                            RR_interpolated[i] = interpolate_2D(self.temperature_exp, self.RR_exp, temperature_sciantix[i], RR_fr[i])
 
             # region2 : 
             for i in range(index_max_time_exp+1,len(time_sciantix)):
+
+                first_derivative = np.gradient(self.interpolated_previous[:,0], self.output_previous[:,0])
+                second_derivative = np.gradient(first_derivative, self.output_previous[:,0])
+                dFR_dt[0] = first_derivative[-1]
+                dFR_dtdt[0] = second_derivative[-1]
+
                 state,temperature_state_start, temperature_state_end = plateauIdentify(self.time_history_original,self.temperature_history_original,time_sciantix[i])
-                # print(self.time_history_original)
-                # print(i,state)
-                if state == "increase" and FR[i-1]<1:
-                    index_state_end = findClosestIndex_1D(self.temperature_exp, temperature_state_end)
-                    RR[i] = interpolate_1D(self.temperature_exp[:index_state_end], self.RR_exp[:index_state_end], temperature_sciantix[i])
-                    FR[i] = FR[i-1] + RR[i] * (time_sciantix[i]-time_sciantix[i-1]) * 3600/Helium_total
-                    if FR[i] > 1:
-                        FR[i] =1
-                        RR[i] = 0
-                    # print(i,FR[i])
-                elif state == "plateau" and FR[i-1] < 1:
-                    if i > 1:
-                        slop = (FR[i-1] - FR[i-2])/(time_sciantix[i-1]-time_sciantix[i-2])
+                if time_sciantix[i] == time_sciantix[i-1]:
+                    # this is because in sciantix, there are some same time points
+                    FR_interpolated[i] = FR_interpolated[i-1]
+                    RR_interpolated[i] = RR_interpolated[i-1]
+                    dFR_dt[i] = dFR_dt[i-1]
+                    dFR_dtdt[i] = dFR_dtdt[i-1]
+                else:
+                    if state == "increase" and FR_interpolated[i-1]<1:
+                        index_state_end = findClosestIndex_1D(self.temperature_exp, temperature_state_end)
+                        RR_interpolated[i] = interpolate_1D(self.temperature_exp[:index_state_end], self.RR_exp[:index_state_end], temperature_sciantix[i])
+                        if RR_interpolated[i] <0:
+                            RR_interpolated[i] = 0
+                        FR_interpolated[i] = FR_interpolated[i-1] + RR_interpolated[i] * (time_sciantix[i]-time_sciantix[i-1]) * 3600/Helium_total
+                        if FR_interpolated[i] > 1:
+                            FR_interpolated[i] =1
+                            RR_interpolated[i] = 0
+                        # dFR_dt[i] = (FR_interpolated[i] - FR_interpolated[i-1])/(time_sciantix[i]-time_sciantix[i-1])
+                        # dFR_dtdt[i] = (dFR_dt[i] - dFR_dt[i-1])/(time_sciantix[i]-time_sciantix[i-1])
 
-                    else: #i == 1
-                        slop = (FR[0] - self.output_previous[-2,2])/(self.output_previous[-1,0]-self.output_previous[-2,0])
+                    elif state == "plateau" and FR_interpolated[i-1] < 1:    
+ 
+                        FR_interpolated[i] = FR_interpolated[i-1] + dFR_dt[i-1] * (time_sciantix[i]-time_sciantix[i-1]) + 0.5 * dFR_dtdt[i-1] * (time_sciantix[i]-time_sciantix[i-1])**2
+                        RR_interpolated[i] = (FR_interpolated[i] - FR_interpolated[i-1])*Helium_total/(time_sciantix[i]-time_sciantix[i-1])/3600
+                        # dFR_dt[i] = (FR_interpolated[i] - FR_interpolated[i-1])/(time_sciantix[i]-time_sciantix[i-1])
+                        # dFR_dtdt[i] = (dFR_dt[i] - dFR_dt[i-1])/(time_sciantix[i]-time_sciantix[i-1])
+                        if FR_interpolated[i] >= 1:
+                            FR_interpolated[i] = 1
+                            RR_interpolated[i] = 0
 
-                    time_saturation = time_sciantix[i-1] + (1-FR[i-1])/slop
-                    if time_sciantix[i] < time_saturation:
-                        FR[i] = FR[i-1] + (time_sciantix[i]-time_sciantix[i-1])*slop
-                        RR[i] = FR[i-1]
-                    else:
-                        FR[i] = 1
-                        RR[i] = 0
-                    # print(i,FR[i])
-                elif state == "decrease" and FR[i-1] < 1:
-                    index_state_start = len(self.temperature_exp) - findClosestIndex_1D(self.temperature_exp[::-1], temperature_state_start) -1
-                    RR[i] = interpolate_1D(self.temperature_exp[index_state_start:],self.RR_exp[index_state_start:], temperature_sciantix[i])
-                    
-                    FR[i] = FR[i-1] + RR[i] * (time_sciantix[i]-time_sciantix[i-1]) * 3600/Helium_total
-                    if FR[i] > 1:
-                        FR[i] = 1
-                        RR[i] = 0
-                else: #FR[i-1] = 1
-                    FR[i] = 1
-                    RR[i] = 0
+                    elif state == "decrease" and FR_interpolated[i-1] < 1:
+                        index_state_start = len(self.temperature_exp) - findClosestIndex_1D(self.temperature_exp[::-1], temperature_state_start) -1
+                        RR_interpolated[i] = interpolate_1D(self.temperature_exp[index_state_start:],self.RR_exp[index_state_start:], temperature_sciantix[i])
+                        if RR_interpolated[i] < 0:
+                            RR_interpolated[i] = 0
+                        FR_interpolated[i] = FR_interpolated[i-1] + RR_interpolated[i] * (time_sciantix[i]-time_sciantix[i-1]) * 3600/Helium_total
+                        if FR_interpolated[i] >= 1:
+                            FR_interpolated[i] = 1
+                            RR_interpolated[i] = 0
+                        # dFR_dt[i] = (FR_interpolated[i] - FR_interpolated[i-1])/(time_sciantix[i]-time_sciantix[i-1])
+                        # dFR_dtdt[i] = (dFR_dt[i] - dFR_dt[i-1])/(time_sciantix[i]-time_sciantix[i-1])
+                    else: #FR[i-1] = 1
+                        FR_interpolated[i] = 1
+                        RR_interpolated[i] = 0
+                        # dFR_dt[i] = (FR_interpolated[i] - FR_interpolated[i-1])/(time_sciantix[i]-time_sciantix[i-1])
+                        # dFR_dtdt[i] = (dFR_dt[i] - dFR_dt[i-1])/(time_sciantix[i]-time_sciantix[i-1])
+                    dFR_dt[i] = (FR_interpolated[i] - FR_interpolated[i-1])/(time_sciantix[i]-time_sciantix[i-1])
+                    dFR_dtdt[i] = (dFR_dt[i] - dFR_dt[i-1])/(time_sciantix[i]-time_sciantix[i-1])
             
-            self.FR = FR
-            self.RR = RR
+            self.FR = FR_interpolated
+            self.RR = RR_interpolated
+
+            data = np.column_stack((self.FR, self.RR))
+            with open("interpolated_data.txt",'w') as file:
+                for i, row in enumerate(data):
+                    file.write(f"{row[0]}\t{row[1]}")
+                    if i < len(data) -1 :
+                        file.write("\n")
 
 
             current_sf_selected_value = sf_selected_value
@@ -335,17 +460,63 @@ class optimization():
             error_related = np.zeros_like(FR_sciantix)
 
             for i in range(len(FR_sciantix)):
-                if FR[i] == 0 and FR_sciantix[i] == 0:
-                    error_related[i] = 0
-                elif FR[i] == 0 and FR_sciantix[i] !=0:
-                    error_related[i] = FR_sciantix[i]
-                else:
-                    # error_related[i] = abs((FR[i]-FR_sciantix[i])/FR[i])+abs(RR[i]-RR_sciantix[i]/max(RR))
-                    error_related[i] = abs((FR[i]-FR_sciantix[i])/FR[i])
+
+                # if FR_interpolated[i] == 0 and FR_sciantix[i] == 0 and  dFR_dt[i] != 0:
+                #     # error_related[i] = (dFR_dt[i] - dFR_dt_sciantix[i])/dFR_dt[i]
+                #     error_related[i] = abs((dFR_dt[i] - dFR_dt_sciantix[i])/dFR_dt[i])
+                # elif FR_interpolated[i] == 0 and FR_sciantix[i] !=0 and dFR_dt[i] != 0:
+                #     # error_related[i] = FR_sciantix[i] + (dFR_dt[i] - dFR_dt_sciantix[i])/dFR_dt[i]
+                #     error_related[i] = abs(FR_sciantix[i]) + abs((dFR_dt[i] - dFR_dt_sciantix[i])/dFR_dt[i])
+                # elif dFR_dt[i] !=0:
+                #     # error_related[i] = abs((FR[i]-FR_sciantix[i])/FR[i])+abs(RR[i]-RR_sciantix[i]/max(RR))
+                #     # error_related[i] = abs((FR_interpolated[i]-FR_sciantix[i])/FR_interpolated[i]) 
+                #     error_related[i] = abs((FR_interpolated[i]-FR_sciantix[i])/FR_interpolated[i]) + abs((dFR_dt[i] - dFR_dt_sciantix[i])/dFR_dt[i])
+                # else: #dFR_dt[i] ==0
+                #     error_related[i] = abs((FR_interpolated[i]-FR_sciantix[i])/FR_interpolated[i]) + abs(dFR_dt_sciantix[i])
+               
+                if FR_interpolated[i] == 0 and dFR_dt[i] == 0:
+                    error_related[i] = FR_sciantix[i] + dFR_dt_sciantix[i]
+                elif FR_interpolated[i] != 0 and dFR_dt[i] == 0:
+                    if FR_interpolated[i] < FR_sciantix[i]:
+                        error_related[i] = (FR_interpolated[i] -FR_sciantix[i])/FR_interpolated[i] + 10 * dFR_dt_sciantix[i]
+                    else:
+                        error_related[i] = (FR_interpolated[i] - FR_sciantix[i])/FR_interpolated[i] + dFR_dt_sciantix[i]
+                elif FR_interpolated[i] == 0 and dFR_dt[i] != 0:
+                    error_related[i] = FR_sciantix[i] + (dFR_dt[i] - dFR_dt_sciantix[i])/dFR_dt[i]
+                else:# FR_interpolated[i] !=0 and dFR_dt[i] != 0:
+                    if FR_interpolated[i] < FR_sciantix[i] and dFR_dt[i] < dFR_dt_sciantix[i]:
+                        error_related[i] = (FR_interpolated[i] -FR_sciantix[i])/FR_interpolated[i] + 10 * (dFR_dt[i] - dFR_dt_sciantix[i])/dFR_dt[i]
+                    else:
+                        error_related[i] = (FR_interpolated[i] - FR_sciantix[i])/FR_interpolated[i] + (dFR_dt[i] - dFR_dt_sciantix[i])/dFR_dt[i]
+
+
+                if FR_interpolated[i] == 0 and dFR_dt[i] == 0:
+                    error_related[i] = abs(FR_sciantix[i]) + abs(dFR_dt_sciantix[i])
+                elif FR_interpolated[i] != 0 and dFR_dt[i] == 0:
+                    if FR_interpolated[i] < FR_sciantix[i]:
+                        error_related[i] = abs((FR_interpolated[i] -FR_sciantix[i])/FR_interpolated[i]) + 10 * abs(dFR_dt_sciantix[i])
+                    else:
+                        error_related[i] = abs((FR_interpolated[i] - FR_sciantix[i])/FR_interpolated[i]) + abs(dFR_dt_sciantix[i])
+                elif FR_interpolated[i] == 0 and dFR_dt[i] != 0:
+                    error_related[i] = abs(FR_sciantix[i]) + abs((dFR_dt[i] - dFR_dt_sciantix[i])/dFR_dt[i])
+                else:# FR_interpolated[i] !=0 and dFR_dt[i] != 0:
+                    if FR_interpolated[i] < FR_sciantix[i] and dFR_dt[i] < dFR_dt_sciantix[i]:
+                        error_related[i] = abs((FR_interpolated[i] -FR_sciantix[i])/FR_interpolated[i]) + 10 * abs((dFR_dt[i] - dFR_dt_sciantix[i])/dFR_dt[i])
+                    else:
+                        error_related[i] = abs((FR_interpolated[i] - FR_sciantix[i])/FR_interpolated[i]) + abs((dFR_dt[i] - dFR_dt_sciantix[i])/dFR_dt[i])
+
+
             error = np.sum(error_related)
             print(f"current error: {error}")
+
+            # plt.plot(time_sciantix,self.FR)
+            # plt.plot(time_sciantix,FR_sciantix)
+            # plt.show()
             return error
+
         
+
+
         results = optimize.minimize(costFunction,self.sf_selected_initial_value, method = 'SLSQP',bounds=self.bounds)
 
         self.optimization_results = np.zeros(len(self.sf_selected)+1)
@@ -402,6 +573,20 @@ def getSelectedVariablesValueFromOutput(variable_selected, source_file):
         variable_selected_value[:, i] = data[1:, variablePosition[i]].astype(float)
     
     return variable_selected_value
+
+def readICfromInputInitialConditions(keyword):
+    with open("input_initial_conditions.txt", 'r') as file:
+        line_number = 0
+        previous_line = None
+        for line in file:
+            line_number += 1
+            if keyword in line:
+                break 
+            previous_line = line.strip() 
+    if previous_line is not None:
+        values = [float(val) for val in previous_line.split('\t')]
+        ic_origin = np.array(values)
+    return ic_origin
 
 def moving_average(data, window_size):
     half_window = window_size // 2
@@ -578,7 +763,7 @@ def do_plot(Talip1320):
 
 # Talip1320 = optimization()
 # Talip1320.setCase("test_Talip2014_1320K")
-# Talip1320.setStartEndTime(3.78,5.67)
+# Talip1320.setStartEndTime(3.969,4.536)
 # Talip1320.setInitialConditions()
 # Talip1320.setScalingFactors("helium diffusivity pre exponential", "helium diffusivity activation energy","henry constant pre exponential","henry constant activation energy")
 # setInputOutput = inputOutput()
@@ -724,9 +909,9 @@ os.chdir("..")
 
 
 
-#######
+# ######
 # all start from 0
-#######
+# ######
 # t0 = 0
 # number_of_interval = 10
 # time_points = np.zeros((number_of_interval+1,1))
