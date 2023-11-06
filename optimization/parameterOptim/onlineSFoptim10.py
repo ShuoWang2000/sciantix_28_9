@@ -1017,7 +1017,8 @@ def do_plot(Talip1320):
 # #####
 
 # tf = 3.7
-time_points = np.array([[0],[1.5],[4],[4.5],[5.67]])
+ref_points = np.array([[0],[1.5],[4],[4.5],[5.67]])
+time_points = ref_points
 # number_of_interval = 10
 number_of_interval = len(time_points) - 1
 
@@ -1060,10 +1061,10 @@ results_data[0,3] = "error"
 results_data[1,:] = [0,1.0,1.0,0]
 
 
-# with open(f"optimization_{Talip1320.caseName}_{number_of_interval}.txt", 'w') as file:
-#     for row in results_data:
-#         line = "\t".join(map(str, row))
-#         file.write(line + "\n")
+with open(f"optimization_online.txt", 'w') as file:
+    for row in results_data:
+        line = "\t".join(map(str, row))
+        file.write(line + "\n")
 
 # os.chdir("test_Talip2014_1320K")
 # cloumnsFR  = np.genfromtxt("Talip2014_release_data.txt",dtype = 'float',delimiter='\t')
@@ -1137,36 +1138,37 @@ results_data[1,:] = [0,1.0,1.0,0]
 # ######
 # # all start from 0
 # ######
-# t0 = 0
+time_points = ref_points
 # number_of_interval = 10
-# time_points = np.zeros((number_of_interval+1,1))
-# sf_optimized = np.ones((number_of_interval+1,4))
-# error_optimized = np.zeros((number_of_interval+1,1))
-# results_data = np.empty((number_of_interval+2,4),dtype = object)
-# for i in range(1,number_of_interval+1):
+number_of_interval = len(time_points) - 1
 
-#     Talip1320 = optimization()
-#     Talip1320.setCase("test_Talip2014_1320K")
+sf_optimized = np.ones((number_of_interval+1,2))
+error_optimized = np.zeros((number_of_interval+1,1))
+results_data = np.empty((number_of_interval+2,4),dtype = object)
+final_data = np.empty((0,4))
+final_data_interpolated = np.empty((0,4))
 
-#     tf = Talip1320.time_history_original[-1]
-#     time_points[i] = time_points[i-1]+(tf-t0)/number_of_interval
-#     time_points[i] = np.round(time_points[i],3)
-#     Talip1320.setStartEndTime(0,time_points[i][0])
-#     Talip1320.setInitialConditions()
-#     Talip1320.setScalingFactors("helium diffusivity pre exponential", "helium diffusivity activation energy")
-#     setInputOutput = inputOutput()
-#     Talip1320.optimization(setInputOutput)
-#     results_data[i+1,1:] = Talip1320.optimization_results
-#     results_data[i+1,0] = time_points[i][0]
+for i in range(1,number_of_interval+1):
 
+    Talip1320 = optimization()
+    Talip1320.setCase("test_Talip2014_1320K")
 
-# results_data[0,0] = "time"
-# results_data[0,1:3] = Talip1320.sf_selected
-# results_data[0,3] = "error"
-# results_data[1,:] = [0,1.0,1.0,0]
+    Talip1320.setStartEndTime(0,time_points[i][0])
+    Talip1320.setInitialConditions()
+    Talip1320.setScalingFactors("helium diffusivity pre exponential", "helium diffusivity activation energy")
+    setInputOutput = inputOutput()
+    Talip1320.optimization(setInputOutput)
+    results_data[i+1,1:] = Talip1320.optimization_results
+    results_data[i+1,0] = time_points[i][0]
 
 
-# with open(f"optimization_{Talip1320.caseName}_0_{number_of_interval}.txt", 'w') as file:
-#     for row in results_data:
-#         line = "\t".join(map(str, row))
-#         file.write(line + "\n")
+results_data[0,0] = "time"
+results_data[0,1:3] = Talip1320.sf_selected
+results_data[0,3] = "error"
+results_data[1,:] = [0,1.0,1.0,0]
+
+
+with open(f"optimization_offline.txt", 'w') as file:
+    for row in results_data:
+        line = "\t".join(map(str, row))
+        file.write(line + "\n")
