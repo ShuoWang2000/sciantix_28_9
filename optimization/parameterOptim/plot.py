@@ -157,9 +157,10 @@ ax[0].scatter(time_sciantix, FR_nominal, marker = 'x' ,color = '#98E18D', label=
 ax[0].scatter(data_global[:,0], data_global[:,2],marker = "o", facecolors = "none",edgecolors = 'blue',label = "offline_optimization" )
 ax[0].scatter(time_new[0:length0], FR_new[0:length0], marker = 'x',label = f'optimized_0_{time_end_first}')
 
-for i in range(1,len(time_start2)):
-    ax[0].scatter(time_new[int(length_all[i-1]):int(length_all[i])], FR_new[int(length_all[i-1]):int(length_all[i])], marker = 'x',label = f'optimized_{time_start2[i]}_{time_end2[i]}')
 
+for i in range(0,len(time_start2)):
+    ax[0].scatter(time_new[int(length_all[i]):int(length_all[i+1])], FR_new[int(length_all[i]):int(length_all[i+1])], marker = 'x',label = f'optimized_{time_start2[i]}_{time_end2[i]}')
+#  ax[0].scatter(time_new[int(length_all[2]):int(length_all[3])], FR_new[int(length_all[2]):int(length_all[3])], marker = 'x',label = f'optimized_{time_start2[2]}_{time_end2[2]}')
 # ax[0].scatter(time_new[length0:int(length[0])], FR_new[length0:int(length[0])], marker = 'x',label = f'optimized_0.567__1.134')
 
 
@@ -180,9 +181,9 @@ ax[1].scatter(temperature_exp, RR_exp, marker = '.', c = '#B3B3B3', label='Data 
 ax[1].scatter(temperature_sciantix, RR_nominal, marker = 'x',color = '#98E18D', label='SCIANTIX 2.0 Nominal')
 ax[1].scatter(data_global[:,1], data_global[:,3], marker = 'o', facecolors = "none",edgecolors = 'blue', label = "offline_optimization")
 ax[1].scatter(temperature_new[0:length0], RR_new[0:length0], marker = 'x',label = f'online_optimized_0_{time_end_first}')
-for i in range(1,len(time_start2)):
+for i in range(0,len(time_start2)):
     
-    ax[1].scatter(temperature_new[int(length_all[i-1]):int(length_all[i])], RR_new[int(length_all[i-1]):int(length_all[i])], marker = 'x',label = f'optimized_{time_start2[i]}_{time_end2[i]}')
+    ax[1].scatter(temperature_new[int(length_all[i]):int(length_all[i+1])], RR_new[int(length_all[i]):int(length_all[i+1])], marker = 'x',label = f'optimized_{time_start2[i]}_{time_end2[i]}')
 
 # ax[1].scatter(temperature_new, RR_interpolated, marker = 'x', color = 'blue',label = 'interpolated')
 

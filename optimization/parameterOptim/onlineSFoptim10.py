@@ -136,13 +136,14 @@ class optimization():
     def setStartEndTime(self, time_start, time_end):
         self.time_start = time_start
         self.time_end = time_end
-        print(self.time_start, self.time_end)
+
         # now build a new folder in selected benchmark folder
         if self.time_start !=0:
-            folder_name = f"Optimization_{time_start}__{time_end}"
+            folder_name = f"Optimization_{self.time_start}__{self.time_end}"
         else:
-            folder_name = f"Optimization_0_{time_end}"
-       
+            folder_name = f"Optimization_0_{self.time_end}"
+
+        
         if not os.path.exists(folder_name):
             os.makedirs(folder_name)
         else:
@@ -567,7 +568,7 @@ class optimization():
                     dFR_dt[i] = (FR_interpolated[i] - FR_interpolated[i-1])/(time_sciantix[i]-time_sciantix[i-1])
                     dFR_dtdt[i] = (dFR_dt[i] - dFR_dt[i-1])/(time_sciantix[i]-time_sciantix[i-1])
             
-            dFR_dt = moving_average(dFR_dt,50)
+            dFR_dt = moving_average(dFR_dt,20)
 
             self.FR = FR_interpolated
             self.RR = RR_interpolated
@@ -591,13 +592,13 @@ class optimization():
          
             if self.time_start == 0:
                 for i in range(1,len(FR_sciantix)):
-                    if i+50 < len(FR_interpolated) - 1:
-                        predict_index = i+50
+                    if i+20 < len(FR_interpolated) - 1:
+                        predict_index = i+20
                     else:
                         predict_index = len(FR_interpolated) - 1
 
-                    if i-50 > 0:
-                        prior_index = i -50
+                    if i-20 > 0:
+                        prior_index = i -20
                     else:
                         prior_index = 0
 
@@ -690,7 +691,7 @@ class optimization():
                         else:
                             error_future = 0 
                 
-                error = error_integral + 2*error_now + error_future
+                error = error_integral + 4*error_now + error_future
                     
 
             
@@ -964,7 +965,7 @@ def do_plot(Talip1320):
 
 # Talip1320 = optimization()
 # Talip1320.setCase("test_Talip2014_1320K")
-# Talip1320.setStartEndTime(0,5.67)
+# Talip1320.setStartEndTime(0,0.5)
 # Talip1320.setInitialConditions()
 # Talip1320.setScalingFactors("helium diffusivity pre exponential", "helium diffusivity activation energy","henry constant pre exponential","henry constant activation energy")
 # setInputOutput = inputOutput()
@@ -1016,7 +1017,7 @@ def do_plot(Talip1320):
 # #####
 
 # tf = 3.7
-time_points = np.array([[0.5],[1.0],[1.5],[2.5],[3.5],[4.9],[5.67]])
+time_points = np.array([[0],[1.5],[4],[4.5],[5.67]])
 # number_of_interval = 10
 number_of_interval = len(time_points) - 1
 
@@ -1041,7 +1042,7 @@ for i in range(1,number_of_interval+1):
     # time_points[i] = np.round(time_points[i],3)
     
     Talip1320.setStartEndTime(time_points[i-1][0],time_points[i][0])
-    
+
     Talip1320.setInitialConditions()
     # Talip1320.setScalingFactors("helium diffusivity pre exponential", "helium diffusivity activation energy","henry constant pre exponential","henry constant activation energy")
     Talip1320.setScalingFactors("helium diffusivity pre exponential", "helium diffusivity activation energy")
@@ -1136,36 +1137,36 @@ results_data[1,:] = [0,1.0,1.0,0]
 # ######
 # # all start from 0
 # ######
-t0 = 0
-number_of_interval = 10
-time_points = np.zeros((number_of_interval+1,1))
-sf_optimized = np.ones((number_of_interval+1,4))
-error_optimized = np.zeros((number_of_interval+1,1))
-results_data = np.empty((number_of_interval+2,4),dtype = object)
-for i in range(1,number_of_interval+1):
+# t0 = 0
+# number_of_interval = 10
+# time_points = np.zeros((number_of_interval+1,1))
+# sf_optimized = np.ones((number_of_interval+1,4))
+# error_optimized = np.zeros((number_of_interval+1,1))
+# results_data = np.empty((number_of_interval+2,4),dtype = object)
+# for i in range(1,number_of_interval+1):
 
-    Talip1320 = optimization()
-    Talip1320.setCase("test_Talip2014_1320K")
+#     Talip1320 = optimization()
+#     Talip1320.setCase("test_Talip2014_1320K")
 
-    tf = Talip1320.time_history_original[-1]
-    time_points[i] = time_points[i-1]+(tf-t0)/number_of_interval
-    time_points[i] = np.round(time_points[i],3)
-    Talip1320.setStartEndTime(0,time_points[i][0])
-    Talip1320.setInitialConditions()
-    Talip1320.setScalingFactors("helium diffusivity pre exponential", "helium diffusivity activation energy")
-    setInputOutput = inputOutput()
-    Talip1320.optimization(setInputOutput)
-    results_data[i+1,1:] = Talip1320.optimization_results
-    results_data[i+1,0] = time_points[i][0]
-
-
-results_data[0,0] = "time"
-results_data[0,1:3] = Talip1320.sf_selected
-results_data[0,3] = "error"
-results_data[1,:] = [0,1.0,1.0,0]
+#     tf = Talip1320.time_history_original[-1]
+#     time_points[i] = time_points[i-1]+(tf-t0)/number_of_interval
+#     time_points[i] = np.round(time_points[i],3)
+#     Talip1320.setStartEndTime(0,time_points[i][0])
+#     Talip1320.setInitialConditions()
+#     Talip1320.setScalingFactors("helium diffusivity pre exponential", "helium diffusivity activation energy")
+#     setInputOutput = inputOutput()
+#     Talip1320.optimization(setInputOutput)
+#     results_data[i+1,1:] = Talip1320.optimization_results
+#     results_data[i+1,0] = time_points[i][0]
 
 
-with open(f"optimization_{Talip1320.caseName}_0_{number_of_interval}.txt", 'w') as file:
-    for row in results_data:
-        line = "\t".join(map(str, row))
-        file.write(line + "\n")
+# results_data[0,0] = "time"
+# results_data[0,1:3] = Talip1320.sf_selected
+# results_data[0,3] = "error"
+# results_data[1,:] = [0,1.0,1.0,0]
+
+
+# with open(f"optimization_{Talip1320.caseName}_0_{number_of_interval}.txt", 'w') as file:
+#     for row in results_data:
+#         line = "\t".join(map(str, row))
+#         file.write(line + "\n")
