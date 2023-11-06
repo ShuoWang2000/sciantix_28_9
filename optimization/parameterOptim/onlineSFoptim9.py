@@ -714,7 +714,7 @@ class optimization():
                     if abs((FR_interpolated[i] - FR_sciantix[i])/FR_interpolated[i]) < 0.05:
                         error_related[i] = error_integral + error_now + error_future
                     else:
-                        error_related[i] = 3*error_now
+                        error_related[i] = 3*eror_now
                 # print(i,error_related[i])
                 # if FR_interpolated[i] != 0:
                 #     error_related[i] = abs(FR_interpolated[i] - FR_sciantix[i])/FR_interpolated[i] + abs(FR_interpolated[predict_index] - FR_sciantix[predict_index])/FR_interpolated[i] + abs(FR_interpolated[prior_index] - FR_sciantix[prior_index])/FR_interpolated[i]
