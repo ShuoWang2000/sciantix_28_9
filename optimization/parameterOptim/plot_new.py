@@ -157,10 +157,10 @@ plt.subplots_adjust(left=0.1,
 ax[0].scatter(time_exp, FR_exp, marker = '.', c = '#B3B3B3', label='Data from Talip et al. (2014)')
 ax[0].plot(time_sciantix, FR_nominal, 'g', label='SCIANTIX 2.0 - Nominal')
 ax[0].plot(data_global[:,0], data_global[:,2], label = "Offline optimization" )
-ax[0].plot(time_new[0:length0], FR_new[0:length0], label = 'Online optimization')
+ax[0].scatter(time_new[0:length0], FR_new[0:length0], label = 'Online optimization')
 
-for i in range(1,len(time_start2)):
-    ax[0].plot(time_new[int(length_all[i-1]):int(length_all[i])], FR_new[int(length_all[i-1]):int(length_all[i])], label = None)
+for i in range(0,len(time_start2)):
+    ax[0].scatter(time_new[int(length_all[i]):int(length_all[i+1])], FR_new[int(length_all[i]):int(length_all[i+1])], label = None)
 
 # ax[0].scatter(time_new[length0:int(length[0])], FR_new[length0:int(length[0])], marker = 'x',label = f'optimized_0.567__1.134')
 
@@ -181,10 +181,9 @@ ax[0].legend(loc = 'upper left')
 ax[1].scatter(temperature_exp, RR_exp, marker = '.', c = '#B3B3B3', label='Data from Talip et al. (2014)')
 ax[1].plot(temperature_sciantix, RR_nominal, 'g', label='SCIANTIX 2.0 - Nominal')
 ax[1].plot(data_global[:,1], data_global[:,3], label = "Offline optimization")
-ax[1].plot(temperature_new[0:length0], RR_new[0:length0],label = 'Online optimization')
-for i in range(1,len(time_start2)):
-    
-    ax[1].plot(temperature_new[int(length_all[i-1]):int(length_all[i])], RR_new[int(length_all[i-1]):int(length_all[i])], label = None)
+ax[1].scatter(temperature_new[0:length0], RR_new[0:length0],label = 'Online optimization')
+for i in range(0,len(time_start2)):
+    ax[1].scatter(temperature_new[int(length_all[i]):int(length_all[i+1])], RR_new[int(length_all[i]):int(length_all[i+1])], label = None)
 
 # ax.set_title(file + ' - Release rate')
 ax[1].set_xlabel('Temperature (K)')
