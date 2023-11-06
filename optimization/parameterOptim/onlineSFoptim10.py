@@ -567,6 +567,8 @@ class optimization():
                     dFR_dt[i] = (FR_interpolated[i] - FR_interpolated[i-1])/(time_sciantix[i]-time_sciantix[i-1])
                     dFR_dtdt[i] = (dFR_dt[i] - dFR_dt[i-1])/(time_sciantix[i]-time_sciantix[i-1])
             
+            dFR_dt = moving_average(dFR_dt,50)
+
             self.FR = FR_interpolated
             self.RR = RR_interpolated
 
@@ -587,47 +589,60 @@ class optimization():
             ######
             plateau_index = [int(item) for item in plateau_index]
          
-
-            for i in range(1,len(FR_sciantix)):
-                if i+50 < len(FR_interpolated) - 1:
-                    predict_index = i+50
-                else:
-                    predict_index = len(FR_interpolated) - 1
-
-                if i-50 > 0:
-                    prior_index = i -50
-                else:
-                    prior_index = 0
-
-                #integral error: (past)
-                if sum(FR_interpolated[prior_index:i]) != 0:
-                    error_integral = sum(abs(FR_interpolated[prior_index:i]  - FR_sciantix[prior_index:i]))/sum(FR_interpolated[prior_index:i])
-                else:
-                    error_integral = 1
-                # error now
-                if FR_interpolated[i] !=0:
-                    error_now = abs(FR_interpolated[i] - FR_sciantix[i])/FR_interpolated[i]
-                else:
-                    if FR_sciantix[i] != 0:
-                            error_now = 1
+            if self.time_start == 0:
+                for i in range(1,len(FR_sciantix)):
+                    if i+50 < len(FR_interpolated) - 1:
+                        predict_index = i+50
                     else:
-                        error_now = 0
-                #differential error: (future)
-                if dFR_dt[i] >10e-10:
-                    if FR_interpolated[predict_index] != 0:
-                        error_future = abs(dFR_dt[i] - dFR_dt_sciantix[i])/dFR_dt[i] + abs((FR_interpolated[predict_index]-FR_sciantix[predict_index]))/FR_interpolated[predict_index]
+                        predict_index = len(FR_interpolated) - 1
+
+                    if i-50 > 0:
+                        prior_index = i -50
+                    else:
+                        prior_index = 0
+
+                    #integral error: (past)
+                    if sum(FR_interpolated[prior_index:i]) != 0:
+                        error_integral = sum(abs(FR_interpolated[prior_index:i]  - FR_sciantix[prior_index:i]))/sum(FR_interpolated[prior_index:i])
+                    else:
+                        error_integral = 1
+                    # error now
+                    if FR_interpolated[i] !=0:
+                        error_now = abs(FR_interpolated[i] - FR_sciantix[i])/FR_interpolated[i]
                     else:
                         if FR_sciantix[i] != 0:
-                                error_future = abs(dFR_dt[i] - dFR_dt_sciantix[i])/dFR_dt[i]+ 1
+                                error_now = 1
                         else:
-                            error_future = abs(dFR_dt[i] - dFR_dt_sciantix[i])/dFR_dt[i]
-                else:
-                    if dFR_dt_sciantix[i] > 10e-10:
-                            error_future= 2
+                            error_now = 0
+                    #differential error: (future)
+                    if dFR_dt[i] >10e-10:
+                        if FR_interpolated[predict_index] != 0:
+                            error_future = abs(dFR_dt[i] - dFR_dt_sciantix[i])/dFR_dt[i] + abs((FR_interpolated[predict_index]-FR_sciantix[predict_index]))/FR_interpolated[predict_index]
+                        else:
+                            if FR_sciantix[i] != 0:
+                                    error_future = abs(dFR_dt[i] - dFR_dt_sciantix[i])/dFR_dt[i]+ 1
+                            else:
+                                error_future = abs(dFR_dt[i] - dFR_dt_sciantix[i])/dFR_dt[i]
                     else:
-                        error_future = 0
-                
-                if self.time_start == 0:
+                        
+                        if dFR_dt_sciantix[i] > 10e-10:
+                            if FR_interpolated[predict_index] != 0:
+                                error_future= 1 + abs((FR_interpolated[predict_index]-FR_sciantix[predict_index]))/FR_interpolated[predict_index]
+                            else:
+                                if FR_sciantix[i] != 0:
+                                    error_future = 2
+                                else:
+                                    error_future = 1
+                        else:
+                            if FR_interpolated[predict_index] != 0:
+                                error_future = abs((FR_interpolated[predict_index]-FR_sciantix[predict_index]))/FR_interpolated[predict_index]
+                            else:
+                                if FR_sciantix[i] != 0:
+                                    error_future = 1
+                                else:
+                                    error_future = 0
+                    
+
                     if FR_interpolated[i] != 0:
                         if abs((FR_interpolated[i] - FR_sciantix[i])/FR_interpolated[i]) < 0.05:
                             error_related[i] = error_integral + error_now + error_future
@@ -638,21 +653,45 @@ class optimization():
                             error_related[i] = 1
                         else:
                             error_related[i] = 0
-                    error =  np.sum(error_related)
-                
+                error =  np.sum(error_related)
+            else:
+                #error before
+                if sum(FR_interpolated) != 0:
+                    error_integral = sum(abs(FR_interpolated  - FR_sciantix))/sum(FR_interpolated)
                 else:
-                    error = error_integral + 2*error_now + error_future
+                    error_integral = 1
+                    error_related[-1] = error_integral
+                # error now
+                if FR_interpolated[-1] !=0:
+                    error_now = abs(FR_interpolated[-1] - FR_sciantix[-1])/FR_interpolated[-1]
+                else:
+                    if FR_sciantix[-1] != 0:
+                            error_now = 1
+                    else:
+                        error_now = 0
+                    #differential error: (future)
+                if dFR_dt[-1] >10e-10:
+                    if FR_interpolated[-1] != 0:
+                        error_future = abs(dFR_dt[i] - dFR_dt_sciantix[-1])/dFR_dt[-1] + abs((FR_interpolated[-1]-FR_sciantix[-1]))/FR_interpolated[-1]
+                    else:
+                        if FR_sciantix[-1] != 0:
+                                error_future = abs(dFR_dt[-1] - dFR_dt_sciantix[-1])/dFR_dt[-1]+ 1
+                        else:
+                            error_future = abs(dFR_dt[-1] - dFR_dt_sciantix[-1])/dFR_dt[-1]
+                else:
+                    if FR_interpolated[-1] != 0:
+                        if dFR_dt_sciantix[-1] > 10e-10:
+                                error_future= 1 +  abs((FR_interpolated[-1]-FR_sciantix[-1]))/FR_interpolated[-1]
+                        else:
+                            error_future = abs((FR_interpolated[-1]-FR_sciantix[-1]))/FR_interpolated[-1]
+                    else:
+                        if FR_sciantix[-1] != 0:
+                            error_future = 1
+                        else:
+                            error_future = 0 
+                
+                error = error_integral + 2*error_now + error_future
                     
-                # print(i,error_related[i])
-                # if FR_interpolated[i] != 0:
-                #     error_related[i] = abs(FR_interpolated[i] - FR_sciantix[i])/FR_interpolated[i] + abs(FR_interpolated[predict_index] - FR_sciantix[predict_index])/FR_interpolated[i] + abs(FR_interpolated[prior_index] - FR_sciantix[prior_index])/FR_interpolated[i]
-                    
-                # else:
-                #     if FR_sciantix[i] != 0:
-                #             error_related[i] = 1
-                #     else:
-                #         error_related[i] = 0
-            # print(error_related)
 
             
             print(f"current error: {error}")
@@ -973,147 +1012,41 @@ def do_plot(Talip1320):
 # #####
 # online optimization-------testing....
 # #####
-t0 = 0
-# tf = 3.7
-# time_points = np.array([[0],[0.5],[1.0],[1.5],[2.5],[3.5],[4.9],[5.67]])
-number_of_interval = 10
-# number_of_interval = len(time_points) - 1
-time_points = np.zeros((number_of_interval+1,1))
-sf_optimized = np.ones((number_of_interval+1,4))
-error_optimized = np.zeros((number_of_interval+1,1))
-results_data = np.empty((number_of_interval+2,6),dtype = object)
-final_data = np.empty((0,4))
-final_data_interpolated = np.empty((0,4))
-
-
-
-
-for i in range(1,number_of_interval+1):
-    # plateauCount = 0
-    # timeCOunt_plateau = 0
-    # plateauTimePoint = np.empty((0,2))
-    Talip1320 = optimization()
-    Talip1320.setCase("test_Talip2014_1320K")
-
-    tf = Talip1320.time_history_original[-1]
-    time_points[i] = time_points[i-1]+(tf-t0)/number_of_interval
-    time_points[i] = np.round(time_points[i],3)
-    
-    Talip1320.setStartEndTime(time_points[i-1][0],time_points[i][0])
-    Talip1320.setInitialConditions()
-    Talip1320.setScalingFactors("helium diffusivity pre exponential", "helium diffusivity activation energy","henry constant pre exponential","henry constant activation energy")
-    setInputOutput = inputOutput()
-    Talip1320.optimization(setInputOutput)
-    results_data[i+1,1:] = Talip1320.optimization_results
-    results_data[i+1,0] = time_points[i][0]
-    final_data = np.vstack((final_data, Talip1320.final_data))
-    final_data_interpolated = np.vstack((final_data_interpolated, Talip1320.final_interpolated))
-
-results_data[0,0] = "time"
-results_data[0,1:5] = Talip1320.sf_selected
-results_data[0,5] = "error"
-results_data[1,:] = [0,1.0,1.0,1.0,1.0,0]
-
-
-with open(f"optimization_{Talip1320.caseName}_{number_of_interval}.txt", 'w') as file:
-    for row in results_data:
-        line = "\t".join(map(str, row))
-        file.write(line + "\n")
-
-os.chdir("test_Talip2014_1320K")
-cloumnsFR  = np.genfromtxt("Talip2014_release_data.txt",dtype = 'float',delimiter='\t')
-cloumnsRR = np.genfromtxt("Talip2014_rrate_data.txt",dtype = 'float',delimiter='\t')
-variable_selected = np.array(["Time (h)","Temperature (K)","He fractional release (/)", "He release rate (at/m3 s)"])
-coloumnsOutput_nominal = getSelectedVariablesValueFromOutput(variable_selected,"output.txt")
-
-time_exp  = cloumnsFR[:,0]
-FR_exp = cloumnsFR[:,1]
-temperature_exp = cloumnsRR[:,0]
-RR_exp = cloumnsRR[:,1]
-
-time_sciantix = coloumnsOutput_nominal[:,0]
-temperature_sciantix = coloumnsOutput_nominal[:,1]
-FR_nominal = coloumnsOutput_nominal[:,2]
-RR_nominal = coloumnsOutput_nominal[:,3]
-
-FR_interpolated = final_data_interpolated[:,2]
-RR_interpolated = final_data_interpolated[:,3]
-
-
-time_new = final_data[:,0]
-temperature_new = final_data[:,1]
-FR_new = final_data[:,2]
-RR_new = final_data[:,3]
-
-fig, ax = plt.subplots(1,2)
-plt.subplots_adjust(left=0.1,
-                    bottom=0.1,
-                    right=0.9,
-                    top=0.9,
-                    wspace=0.34,
-                    hspace=0.4)
-
-ax[0].scatter(time_exp, FR_exp, marker = '.', c = '#B3B3B3', label='Data from Talip et al. (2014)')
-ax[0].scatter(time_sciantix, FR_nominal,marker = 'x' ,color = '#98E18D', label='SCIANTIX 2.0 Nominal')
-ax[0].scatter(time_new, FR_new, marker = 'x',color = 'red',label = f'optimized_{Talip1320.time_start}_{Talip1320.time_end}')
-ax[0].scatter(time_new, FR_interpolated, marker = 'x',color = 'blue',label = 'interpolated')
-axT = ax[0].twinx()
-axT.set_ylabel('Temperature (K)')
-axT.plot(time_sciantix, temperature_sciantix, 'r', linewidth=1, label="Temperature")
-
-ax[0].set_xlabel('Time (h)')
-ax[0].set_ylabel('Helium fractional release (/)')
-h1, l1 = ax[0].get_legend_handles_labels()
-h2, l2 = axT.get_legend_handles_labels()
-# ax[0].legend(h1+h2, l1+l2)
-ax[0].legend(loc = 'upper left')
-
-""" Plot: Helium release rate """
-ax[1].scatter(temperature_exp, RR_exp, marker = '.', c = '#B3B3B3', label='Data from Talip et al. (2014)')
-ax[1].scatter(temperature_sciantix, RR_nominal, marker = 'x',color = '#98E18D', label='SCIANTIX 2.0 Nominal')
-ax[1].scatter(temperature_new, RR_new, marker = 'x', color = 'red',label = f'optimized_{Talip1320.time_start}_{Talip1320.time_end}')
-ax[1].scatter(temperature_new, RR_interpolated, marker = 'x', color = 'blue',label = 'interpolated')
-
-
-# ax.set_title(file + ' - Release rate')
-ax[1].set_xlabel('Temperature (K)')
-ax[1].set_ylabel('Helium release rate (at m${}^{-3}$ s${}^{-1}$)')
-ax[1].legend()
-
-# plt.savefig(file + '.png')
-plt.show()
-
-os.chdir("..")
-os.chdir("..")
-
-
-
-
-# ######
-# # all start from 0
-# ######
 # t0 = 0
+# # tf = 3.7
+# # time_points = np.array([[0],[0.5],[1.0],[1.5],[2.5],[3.5],[4.9],[5.67]])
 # number_of_interval = 10
+# # number_of_interval = len(time_points) - 1
 # time_points = np.zeros((number_of_interval+1,1))
 # sf_optimized = np.ones((number_of_interval+1,4))
 # error_optimized = np.zeros((number_of_interval+1,1))
 # results_data = np.empty((number_of_interval+2,6),dtype = object)
-# for i in range(1,number_of_interval+1):
+# final_data = np.empty((0,4))
+# final_data_interpolated = np.empty((0,4))
 
+
+
+
+# for i in range(1,number_of_interval+1):
+#     # plateauCount = 0
+#     # timeCOunt_plateau = 0
+#     # plateauTimePoint = np.empty((0,2))
 #     Talip1320 = optimization()
 #     Talip1320.setCase("test_Talip2014_1320K")
 
 #     tf = Talip1320.time_history_original[-1]
 #     time_points[i] = time_points[i-1]+(tf-t0)/number_of_interval
 #     time_points[i] = np.round(time_points[i],3)
-#     Talip1320.setStartEndTime(0,time_points[i][0])
+    
+#     Talip1320.setStartEndTime(time_points[i-1][0],time_points[i][0])
 #     Talip1320.setInitialConditions()
 #     Talip1320.setScalingFactors("helium diffusivity pre exponential", "helium diffusivity activation energy","henry constant pre exponential","henry constant activation energy")
 #     setInputOutput = inputOutput()
 #     Talip1320.optimization(setInputOutput)
 #     results_data[i+1,1:] = Talip1320.optimization_results
 #     results_data[i+1,0] = time_points[i][0]
-
+#     final_data = np.vstack((final_data, Talip1320.final_data))
+#     final_data_interpolated = np.vstack((final_data_interpolated, Talip1320.final_interpolated))
 
 # results_data[0,0] = "time"
 # results_data[0,1:5] = Talip1320.sf_selected
@@ -1121,7 +1054,113 @@ os.chdir("..")
 # results_data[1,:] = [0,1.0,1.0,1.0,1.0,0]
 
 
-# with open(f"optimization_{Talip1320.caseName}_0_{number_of_interval}.txt", 'w') as file:
+# with open(f"optimization_{Talip1320.caseName}_{number_of_interval}.txt", 'w') as file:
 #     for row in results_data:
 #         line = "\t".join(map(str, row))
 #         file.write(line + "\n")
+
+# os.chdir("test_Talip2014_1320K")
+# cloumnsFR  = np.genfromtxt("Talip2014_release_data.txt",dtype = 'float',delimiter='\t')
+# cloumnsRR = np.genfromtxt("Talip2014_rrate_data.txt",dtype = 'float',delimiter='\t')
+# variable_selected = np.array(["Time (h)","Temperature (K)","He fractional release (/)", "He release rate (at/m3 s)"])
+# coloumnsOutput_nominal = getSelectedVariablesValueFromOutput(variable_selected,"output.txt")
+
+# time_exp  = cloumnsFR[:,0]
+# FR_exp = cloumnsFR[:,1]
+# temperature_exp = cloumnsRR[:,0]
+# RR_exp = cloumnsRR[:,1]
+
+# time_sciantix = coloumnsOutput_nominal[:,0]
+# temperature_sciantix = coloumnsOutput_nominal[:,1]
+# FR_nominal = coloumnsOutput_nominal[:,2]
+# RR_nominal = coloumnsOutput_nominal[:,3]
+
+# FR_interpolated = final_data_interpolated[:,2]
+# RR_interpolated = final_data_interpolated[:,3]
+
+
+# time_new = final_data[:,0]
+# temperature_new = final_data[:,1]
+# FR_new = final_data[:,2]
+# RR_new = final_data[:,3]
+
+# fig, ax = plt.subplots(1,2)
+# plt.subplots_adjust(left=0.1,
+#                     bottom=0.1,
+#                     right=0.9,
+#                     top=0.9,
+#                     wspace=0.34,
+#                     hspace=0.4)
+
+# ax[0].scatter(time_exp, FR_exp, marker = '.', c = '#B3B3B3', label='Data from Talip et al. (2014)')
+# ax[0].scatter(time_sciantix, FR_nominal,marker = 'x' ,color = '#98E18D', label='SCIANTIX 2.0 Nominal')
+# ax[0].scatter(time_new, FR_interpolated, marker = 'o', edgecolors = 'blue',facecolors = 'none' ,label = 'interpolated')
+# ax[0].scatter(time_new, FR_new, marker = 'x',color = 'red',label = f'Continuous optimization')
+# axT = ax[0].twinx()
+# axT.set_ylabel('Temperature (K)')
+# axT.plot(time_sciantix, temperature_sciantix, 'r', linewidth=1, label="Temperature")
+
+# ax[0].set_xlabel('Time (h)')
+# ax[0].set_ylabel('Helium fractional release (/)')
+# h1, l1 = ax[0].get_legend_handles_labels()
+# h2, l2 = axT.get_legend_handles_labels()
+# # ax[0].legend(h1+h2, l1+l2)
+# ax[0].legend(loc = 'upper left')
+
+# """ Plot: Helium release rate """
+# ax[1].scatter(temperature_exp, RR_exp, marker = '.', c = '#B3B3B3', label='Data from Talip et al. (2014)')
+# ax[1].scatter(temperature_sciantix, RR_nominal, marker = 'x',color = '#98E18D', label='SCIANTIX 2.0 Nominal')
+# ax[1].scatter(temperature_new, RR_interpolated, marker = 'o', edgecolors = 'blue',facecolors = 'none' ,label = 'interpolated')
+# ax[1].scatter(temperature_new, RR_new, marker = 'x', color = 'red',label = f'Continuous optimization')
+
+
+# # ax.set_title(file + ' - Release rate')
+# ax[1].set_xlabel('Temperature (K)')
+# ax[1].set_ylabel('Helium release rate (at m${}^{-3}$ s${}^{-1}$)')
+# ax[1].legend()
+
+# # plt.savefig(file + '.png')
+# plt.show()
+
+# os.chdir("..")
+# os.chdir("..")
+
+
+
+
+# ######
+# # all start from 0
+# ######
+t0 = 0
+number_of_interval = 10
+time_points = np.zeros((number_of_interval+1,1))
+sf_optimized = np.ones((number_of_interval+1,4))
+error_optimized = np.zeros((number_of_interval+1,1))
+results_data = np.empty((number_of_interval+2,6),dtype = object)
+for i in range(1,number_of_interval+1):
+
+    Talip1320 = optimization()
+    Talip1320.setCase("test_Talip2014_1320K")
+
+    tf = Talip1320.time_history_original[-1]
+    time_points[i] = time_points[i-1]+(tf-t0)/number_of_interval
+    time_points[i] = np.round(time_points[i],3)
+    Talip1320.setStartEndTime(0,time_points[i][0])
+    Talip1320.setInitialConditions()
+    Talip1320.setScalingFactors("helium diffusivity pre exponential", "helium diffusivity activation energy","henry constant pre exponential","henry constant activation energy")
+    setInputOutput = inputOutput()
+    Talip1320.optimization(setInputOutput)
+    results_data[i+1,1:] = Talip1320.optimization_results
+    results_data[i+1,0] = time_points[i][0]
+
+
+results_data[0,0] = "time"
+results_data[0,1:5] = Talip1320.sf_selected
+results_data[0,5] = "error"
+results_data[1,:] = [0,1.0,1.0,1.0,1.0,0]
+
+
+with open(f"optimization_{Talip1320.caseName}_0_{number_of_interval}.txt", 'w') as file:
+    for row in results_data:
+        line = "\t".join(map(str, row))
+        file.write(line + "\n")
