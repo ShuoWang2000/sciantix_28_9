@@ -1079,7 +1079,7 @@ for i in range(1,number_of_interval+1):
     results_data[i+1,1:] = Talip1320.optimization_results
     results_data[i+1,0] = time_points[i][0]
     final_data = np.vstack((final_data, Talip1320.final_data))
-    final_data_interpolated = np.vstack((final_data_interpolated, Talip1320.final_interpolated))
+    fina#l_data_interpolated = np.vstack((final_data_interpolated, Talip1320.final_interpolated))
 
 results_data[0,0] = "time"
 results_data[0,1:5] = Talip1320.sf_selected
