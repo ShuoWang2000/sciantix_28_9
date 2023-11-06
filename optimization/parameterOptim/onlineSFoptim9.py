@@ -6,7 +6,7 @@ matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 import scipy.optimize as optimize
 from scipy.optimize import Bounds
-import gc
+import re
 
 
 class inputOutput():
@@ -94,8 +94,10 @@ class inputOutput():
         # here, in Talip cases, we only interesed in FR and RR since we only have these two variables experimental data
         self.variable_selected = np.array(["Time (h)","Temperature (K)","He fractional release (/)", "He release rate (at/m3 s)"])
         self.variable_selected_value = getSelectedVariablesValueFromOutput(self.variable_selected,"output.txt")
+        # print(self.variable_selected_value[:,1])
         self.time_sciantix = self.variable_selected_value[:,0]
         self.temperature_sciantix = self.variable_selected_value[:,1]
+
         self.FR_sciantix = self.variable_selected_value[:,2]
         self.RR_sciantix = self.variable_selected_value[:,3]
 
@@ -134,6 +136,7 @@ class optimization():
     def setStartEndTime(self, time_start, time_end):
         self.time_start = time_start
         self.time_end = time_end
+
         # now build a new folder in selected benchmark folder
         if self.time_start !=0:
             folder_name = f"Optimization_{time_start}__{time_end}"
@@ -263,17 +266,54 @@ class optimization():
             FR_ic = 0
             RR_interpolated_ic = 0
             FR_interpolated_ic = 0
+            
+            keyword = "Optimization_0_"
+            folder_collection = []
+            pattern = r'Optimization_\d+_(\d+\.\d+)'
+            find = False
+            for folder_name in os.listdir(parent_directory):
+                folder_path = os.path.join(parent_directory, folder_name)
+                if os.path.isdir(folder_path) and keyword in folder_name:
+                    find = True
+                    folder_collection.append(folder_name)
 
-            self.scaling_factors = {}
-            with open("input_scaling_factors.txt", 'r') as file:
-                lines = file.readlines()
-            sf_name = []
-            i = 0
-            while i < len(lines):
-                value = float(lines[i].strip())
-                sf_name.append(lines[i + 1].strip()[len("# scaling factor - "):])
-                self.scaling_factors[sf_name[-1]] = value
-                i += 2
+            time_end = []
+            for file_name in folder_collection:
+                match = re.search(pattern, file_name)
+                if match:
+                    time = np.round(float(match.group(1)),3)
+                    time_end.append(time)
+            time_end = np.array(time_end)
+            index = np.where(time_end < self.time_end)[0]
+            if len(index) > 0:
+                time_end_previous = np.min(time_end[index])
+                folder_path = os.path.join(parent_directory, f"Optimization_0_{time_end_previous}")
+  
+                os.chdir(folder_path)
+
+                self.scaling_factors = {}
+                with open("input_scaling_factors.txt", 'r') as file:
+                    lines = file.readlines()
+                sf_name = []
+                i = 0
+                while i < len(lines):
+                    value = float(lines[i].strip())
+                    sf_name.append(lines[i + 1].strip()[len("# scaling factor - "):])
+                    self.scaling_factors[sf_name[-1]] = value
+                    i += 2
+                os.chdir(current_directory)
+            else:
+                os.chdir(current_directory)
+                self.scaling_factors = {}
+                with open("input_scaling_factors.txt", 'r') as file:
+                    lines = file.readlines()
+                sf_name = []
+                i = 0
+                while i < len(lines):
+                    value = float(lines[i].strip())
+                    sf_name.append(lines[i + 1].strip()[len("# scaling factor - "):])
+                    self.scaling_factors[sf_name[-1]] = value
+                    i += 2
 
 
         self.ic_new = ic_new
@@ -334,6 +374,10 @@ class optimization():
             RR_fr = np.zeros_like(inputOutput.RR_sciantix)
             time_sciantix = inputOutput.time_sciantix + self.time_start
             temperature_sciantix = inputOutput.temperature_sciantix
+            # print(temperature_sciantix)
+            
+            
+            
             FR_sciantix = inputOutput.FR_sciantix
             dFR_dt_sciantix = np.zeros_like(inputOutput.RR_sciantix)
             if self.time_start == 0.0:
@@ -362,50 +406,153 @@ class optimization():
             # second_derivative = np.gradient(first_derivative, self.output_previous[:,0])
             # dFR_dt[0] = first_derivative[-1]
             # dFR_dtdt[0] = second_derivative[-1]
+            plateau_index = []
 
             if time_sciantix[0] > max(self.time_exp):
                 index_max_time_exp = 0
 
-
             else: #time_sciantix[0] < max(self.time_exp)
                 index_max_time_exp = findClosestIndex_1D(time_sciantix, max(self.time_exp))
+                
+                
+                if len(time_sciantix) > index_max_time_exp+1:
+                    if time_sciantix[index_max_time_exp] == time_sciantix[index_max_time_exp+1]:
+                        index_max_time_exp = index_max_time_exp + 1
+                
                 if time_sciantix[index_max_time_exp] > max(self.time_exp):
                         index_max_time_exp = index_max_time_exp - 1
                 if index_max_time_exp == 0:
                     pass
                 else:
+                    
                     for i in range(1,index_max_time_exp + 1):
+
                         if time_sciantix[i] == time_sciantix[i-1]:
                             # this is because in sciantix, there are some same time points
                             FR_interpolated[i] = FR_interpolated[i-1]
                             RR_fr[i] = RR_fr[i-1]
                             RR_interpolated[i] = RR_interpolated[i-1]
+                            
+
                         else:
                             FR_interpolated[i] = interpolate_1D(self.time_exp, self.FR_smoothed, time_sciantix[i])
+                            if FR_interpolated[i] <0 :
+                                FR_interpolated[i] =0
                             if FR_interpolated[i] < FR_interpolated[i-1]:
                                 FR_interpolated[i] = FR_interpolated[i-1]
+                            
                             RR_fr[i] =(FR_interpolated[i]-FR_interpolated[i-1])/(time_sciantix[i]-time_sciantix[i-1])/3600*Helium_total
                             RR_interpolated[i] = interpolate_2D(self.temperature_exp, self.RR_exp, temperature_sciantix[i], RR_fr[i])
+                            if RR_interpolated[i] < 0:
+                                RR_interpolated[i] = 0
+                    
+                    if self.time_start == 0:
 
+                        dFR_dt[0:index_max_time_exp+1] = np.gradient(FR_interpolated[0:index_max_time_exp+1], time_sciantix[0:index_max_time_exp+1])
+                        for i in range(index_max_time_exp+1):
+                            if dFR_dt[i] < 0:
+                                dFR_dt[i] = 0
+                        dFR_dtdt[0:index_max_time_exp+1] = np.gradient(dFR_dt[0:index_max_time_exp+1],time_sciantix[0:index_max_time_exp+1])
+
+                    else:
+                        first_derivative = np.gradient(self.interpolated_previous[:,0], self.output_previous[:,0])
+                        second_derivative = np.gradient(first_derivative, self.output_previous[:,0])
+                        # dFR_dt[0] = first_derivative[-1]
+                        # dFR_dtdt[0] = second_derivative[-1]
+                        # first_derivative_reverse = first_derivative[::-1]
+                        # second_derivative_reverse = second_derivative[::-1]
+                        for j in range(len(first_derivative)):
+                            if np.isnan(first_derivative[::-1])[j] == False:
+                                dFR_dt[0] = first_derivative[::-1][j]
+                                break
+                        for k in range(len(second_derivative)):
+                            if np.isnan(second_derivative[::-1])[k] == False:
+                                dFR_dtdt[0] = first_derivative[::-1][k]
+                                break 
+                        dFR_dt[1:index_max_time_exp+1] = (np.gradient(FR_interpolated[1:index_max_time_exp+1], time_sciantix[1:index_max_time_exp+1]))
+                        for i in range(index_max_time_exp+1):
+                            if dFR_dt[i] < 0:
+                                dFR_dt[i] = 0
+                        dFR_dtdt[1:index_max_time_exp+1] = np.gradient(dFR_dt[1:index_max_time_exp+1],time_sciantix[1:index_max_time_exp+1])
+                        # print(dFR_dt)
+                        
+                      
             # region2 : 
             for i in range(index_max_time_exp+1,len(time_sciantix)):
+                
+                if index_max_time_exp == 0:
+                    first_derivative = np.gradient(self.interpolated_previous[:,0], self.output_previous[:,0])
+                    second_derivative = np.gradient(first_derivative, self.output_previous[:,0])
+                    # dFR_dt[0] = first_derivative[-1]
+                    # dFR_dtdt[0] = second_derivative[-1]
+                    # first_derivative_reverse = first_derivative[::-1]
+                    # second_derivative_reverse = second_derivative[::-1]
+                    for j in range(len(first_derivative)):
+                        if np.isnan(first_derivative[::-1])[j] == False:
+                            dFR_dt[0] = first_derivative[::-1][j]
+                            break
+                    for k in range(len(second_derivative)):
+                        if np.isnan(second_derivative[::-1])[k] == False:
+                            dFR_dtdt[0] = first_derivative[::-1][k]
+                            break
+                
+                elif index_max_time_exp == 1:
+                    first_derivative = np.gradient(self.interpolated_previous[:,0], self.output_previous[:,0])
+                    second_derivative = np.gradient(first_derivative, self.output_previous[:,0])
+                    if time_sciantix[index_max_time_exp] != time_sciantix[index_max_time_exp-1]:
+                        # first_derivative = np.gradient(self.interpolated_previous[:,0], self.output_previous[:,0])
+                        # second_derivative = np.gradient(first_derivative, self.output_previous[:,0])
+                        dFR_dt[index_max_time_exp] = (FR_interpolated[index_max_time_exp]-FR_interpolated[index_max_time_exp-1])/(time_sciantix[index_max_time_exp]-time_sciantix[index_max_time_exp-1])
+                        for j in range(len(first_derivative)):
+                            if np.isnan(first_derivative[::-1])[j] == False:
+                                dFR_dt[0] = first_derivative[::-1][j]
+                                break
+                        dFR_dtdt[index_max_time_exp] = (dFR_dt[1] - dFR_dt[0])/(time_sciantix[1]-time_sciantix[0])
+                    else:
+                        for j in range(len(first_derivative)):
+                            if np.isnan(first_derivative[::-1])[j] == False:
+                                dFR_dt[0] = first_derivative[::-1][j]
+                                break
+                        for k in range(len(second_derivative)):
+                            if np.isnan(second_derivative[::-1])[k] == False:
+                                dFR_dtdt[0] = first_derivative[::-1][k]
+                                break
 
-                first_derivative = np.gradient(self.interpolated_previous[:,0], self.output_previous[:,0])
-                second_derivative = np.gradient(first_derivative, self.output_previous[:,0])
-                # dFR_dt[0] = first_derivative[-1]
-                # dFR_dtdt[0] = second_derivative[-1]
-                # first_derivative_reverse = first_derivative[::-1]
-                # second_derivative_reverse = second_derivative[::-1]
-                for j in range(len(first_derivative)):
-                    if np.isnan(first_derivative[::-1])[j] == False:
-                        dFR_dt[0] = first_derivative[::-1][j]
-                        break
-                for k in range(len(second_derivative)):
-                    if np.isnan(second_derivative[::-1])[k] == False:
-                        dFR_dtdt[0] = first_derivative[::-1][k]
-                        break
-
-
+                else:
+                    if time_sciantix[index_max_time_exp] != time_sciantix[index_max_time_exp-1] and time_sciantix[index_max_time_exp-1] != time_sciantix[index_max_time_exp-2]:
+                        
+                        dFR_dt[index_max_time_exp] = (FR_interpolated[index_max_time_exp]-FR_interpolated[index_max_time_exp-1])/(time_sciantix[index_max_time_exp]-time_sciantix[index_max_time_exp-1])
+                        dFR_dt[index_max_time_exp-1] = (FR_interpolated[index_max_time_exp-1] - FR_interpolated[index_max_time_exp-2])/(time_sciantix[index_max_time_exp-1]-time_sciantix[index_max_time_exp-2])
+                        dFR_dtdt[index_max_time_exp] = (dFR_dt[index_max_time_exp]-dFR_dt[index_max_time_exp-1])/(time_sciantix[index_max_time_exp]-time_sciantix[index_max_time_exp-1])
+                    
+                    else:
+                        if index_max_time_exp > 2 and time_sciantix[index_max_time_exp] == time_sciantix[index_max_time_exp-1] and time_sciantix[index_max_time_exp-1] != time_sciantix[index_max_time_exp-2]:
+                            
+                            dFR_dt[index_max_time_exp] = (FR_interpolated[index_max_time_exp-1]-FR_interpolated[index_max_time_exp-2])/(time_sciantix[index_max_time_exp-1]-time_sciantix[index_max_time_exp-2])
+                            dFR_dt[index_max_time_exp-1] = (FR_interpolated[index_max_time_exp-2] - FR_interpolated[index_max_time_exp-3])/(time_sciantix[index_max_time_exp-2]-time_sciantix[index_max_time_exp-3])
+                            dFR_dtdt[index_max_time_exp] = (dFR_dt[index_max_time_exp]-dFR_dt[index_max_time_exp-1])/(time_sciantix[index_max_time_exp-1]-time_sciantix[index_max_time_exp-2])
+                        
+                        elif index_max_time_exp> 2 and time_sciantix[index_max_time_exp] != time_sciantix[index_max_time_exp-1] and time_sciantix[index_max_time_exp-1] == time_sciantix[index_max_time_exp-2]:
+                            dFR_dt[index_max_time_exp] = (FR_interpolated[index_max_time_exp]-FR_interpolated[index_max_time_exp-1])/(time_sciantix[index_max_time_exp]-time_sciantix[index_max_time_exp-1])
+                            dFR_dt[index_max_time_exp-1] = (FR_interpolated[index_max_time_exp-2] - FR_interpolated[index_max_time_exp-3])/(time_sciantix[index_max_time_exp-2]-time_sciantix[index_max_time_exp-3])
+                            dFR_dtdt[index_max_time_exp] = (dFR_dt[index_max_time_exp]-dFR_dt[index_max_time_exp-1])/(time_sciantix[index_max_time_exp]-time_sciantix[index_max_time_exp-1])
+                        else:
+                            first_derivative = np.gradient(self.interpolated_previous[:,0], self.output_previous[:,0])
+                            second_derivative = np.gradient(first_derivative, self.output_previous[:,0])
+                            # dFR_dt[0] = first_derivative[-1]
+                            # dFR_dtdt[0] = second_derivative[-1]
+                            # first_derivative_reverse = first_derivative[::-1]
+                            # second_derivative_reverse = second_derivative[::-1]
+                            for j in range(len(first_derivative)):
+                                if np.isnan(first_derivative[::-1])[j] == False:
+                                    dFR_dt[0] = first_derivative[::-1][j]
+                                    break
+                            for k in range(len(second_derivative)):
+                                if np.isnan(second_derivative[::-1])[k] == False:
+                                    dFR_dtdt[0] = first_derivative[::-1][k]
+                                    break
+                            
+                
                 state,temperature_state_start, temperature_state_end = plateauIdentify(self.time_history_original,self.temperature_history_original,time_sciantix[i])
                 if time_sciantix[i] == time_sciantix[i-1]:
                     # this is because in sciantix, there are some same time points
@@ -427,7 +574,8 @@ class optimization():
                         # dFR_dtdt[i] = (dFR_dt[i] - dFR_dt[i-1])/(time_sciantix[i]-time_sciantix[i-1])
 
                     elif state == "plateau" and FR_interpolated[i-1] < 1:    
- 
+
+                        plateau_index.append(i)
                         FR_interpolated[i] = FR_interpolated[i-1] + dFR_dt[i-1] * (time_sciantix[i]-time_sciantix[i-1]) + 0.5 * dFR_dtdt[i-1] * (time_sciantix[i]-time_sciantix[i-1])**2
                         RR_interpolated[i] = (FR_interpolated[i] - FR_interpolated[i-1])*Helium_total/(time_sciantix[i]-time_sciantix[i-1])/3600
                         # dFR_dt[i] = (FR_interpolated[i] - FR_interpolated[i-1])/(time_sciantix[i]-time_sciantix[i-1])
@@ -435,6 +583,7 @@ class optimization():
                         if FR_interpolated[i] >= 1:
                             FR_interpolated[i] = 1
                             RR_interpolated[i] = 0
+
 
                     elif state == "decrease" and FR_interpolated[i-1] < 1:
                         index_state_start = len(self.temperature_exp) - findClosestIndex_1D(self.temperature_exp[::-1], temperature_state_start) -1
@@ -470,71 +619,116 @@ class optimization():
             print(f"current value: {current_sf_selected_value}")
             error_related = np.zeros_like(FR_sciantix)
 
-            ###########
-            # error function: consider FR error and its derivative error
-            ###########
+            #######
+            # error function better
+            ######
+            plateau_index = [int(item) for item in plateau_index]
+            # for i in range(1,len(self.time_history_original)):
+            #     if self.temperature_history_original[i] == self.temperature_history_original[i-1]:
+            #         time_first_plateau = self.time_history_original[i-1]
+            #         break
+            # if self.time_start < time_first_plateau and self.time_end > time_first_plateau:
+            #     index_first_plateau = findClosestIndex_1D(time_sciantix, time_first_plateau)
+            
+            #     for i in range(len(FR_sciantix)):
+            #         if FR_interpolated[i] != 0:
+            #             if (FR_interpolated[i] - FR_sciantix[i])/FR_interpolated[i] > 0.1:
+            #                 if dFR_dt[i-1] != 0:
+            #                     error_related[i] = abs(FR_interpolated[i] - FR_sciantix[i])/FR_interpolated[i] + abs(dFR_dt[i-1] - dFR_dt_sciantix[i-1])/dFR_dt[i-1]
+            #                 else:
+            #                     error_related[i] = abs(FR_interpolated[i] - FR_sciantix[i])/FR_interpolated[i] + 1
+            #             else:
+            #                 error_related[i] = abs(FR_interpolated[i] - FR_sciantix[i])/FR_interpolated[i]
+                    
+            #         else:
+            #             if FR_sciantix[i] != 0:
+            #                 if dFR_dt[i-1] != 0:
+            #                     error_related[i] = 1 + abs(dFR_dt[i-1] - dFR_dt_sciantix[i-1])/dFR_dt[i-1]
+            #                 else:
+            #                     error_related[i] = 1 + 1
+            #             else:
+            #                 error_related[i] = 0
+            #     if FR_interpolated[-1] < FR_sciantix[-1]:
+            #         # error_related = error_related + abs(FR_interpolated[index_first_plateau]- FR_sciantix[index_first_plateau])/FR_interpolated[index_first_plateau]
+            #         error_related = error_related + abs(dFR_dt_sciantix[index_first_plateau] - dFR_dt[index_first_plateau])/dFR_dt[index_first_plateau]
+            # else:
+            #     for i in range(len(FR_sciantix)):
+            #         if FR_interpolated[i] != 0:
+            #             if (FR_interpolated[i] - FR_sciantix[i])/FR_interpolated[i] > 0.1:
+            #                 if dFR_dt[i-1] != 0:
+            #                     error_related[i] = abs(FR_interpolated[i] - FR_sciantix[i])/FR_interpolated[i] + abs(dFR_dt[i-1] - dFR_dt_sciantix[i-1])/dFR_dt[i-1]
+            #                 else:
+            #                     error_related[i] = abs(FR_interpolated[i] - FR_sciantix[i])/FR_interpolated[i] + 1
+            #             else:
+            #                 error_related[i] = abs(FR_interpolated[i] - FR_sciantix[i])/FR_interpolated[i]
+                    
+            #         else:
+            #             if FR_sciantix[i] != 0:
+            #                 if dFR_dt[i-1] != 0:
+            #                     error_related[i] = 1 + abs(dFR_dt[i-1] - dFR_dt_sciantix[i-1])/dFR_dt[i-1]
+            #                 else:
+            #                     error_related[i] = 1 + 1
+            #             else:
+            #                 error_related[i] = 0
+                    
+            for i in range(1,len(FR_sciantix)):
+                if i+50 < len(FR_interpolated) - 1:
+                    predict_index = i+50
+                else:
+                    predict_index = len(FR_interpolated) - 1
 
-            for i in range(len(FR_sciantix)):
+                if i-50 > 0:
+                    prior_index = i -50
+                else:
+                    prior_index = 0
 
-                if FR_interpolated[i] == 0 and dFR_dt[i] == 0:
-                    error_related[i] = FR_sciantix[i] + dFR_dt_sciantix[i]
-                elif FR_interpolated[i] != 0 and dFR_dt[i] == 0:
-                    if FR_interpolated[i] < FR_sciantix[i]:
-                        error_related[i] = (FR_interpolated[i] -FR_sciantix[i])/FR_interpolated[i] + 10 * dFR_dt_sciantix[i]
+                #integral error: (past)
+                if sum(FR_interpolated[prior_index:i]) != 0:
+                    error_integral = sum(abs(FR_interpolated[prior_index:i]  - FR_sciantix[prior_index:i]))/sum(FR_interpolated[prior_index:i])
+                else:
+                    error_integral = 1
+                # error now
+                if FR_interpolated[i] !=0:
+                    error_now = abs(FR_interpolated[i] - FR_sciantix[i])/FR_interpolated[i]
+                else:
+                    if FR_sciantix[i] != 0:
+                            error_now = 1
                     else:
-                        error_related[i] = (FR_interpolated[i] - FR_sciantix[i])/FR_interpolated[i] + dFR_dt_sciantix[i]
-                elif FR_interpolated[i] == 0 and dFR_dt[i] != 0:
-                    error_related[i] = FR_sciantix[i] + (dFR_dt[i] - dFR_dt_sciantix[i])/dFR_dt[i]
-                else:# FR_interpolated[i] !=0 and dFR_dt[i] != 0:
-                    if FR_interpolated[i] < FR_sciantix[i] and dFR_dt[i] < dFR_dt_sciantix[i]:
-                        error_related[i] = (FR_interpolated[i] -FR_sciantix[i])/FR_interpolated[i] + 10 * (dFR_dt[i] - dFR_dt_sciantix[i])/dFR_dt[i]
+                        error_now = 0
+                #differential error: (future)
+                if dFR_dt[i] >10e-10:
+                    if FR_interpolated[predict_index] != 0:
+                        error_future = abs(dFR_dt[i] - dFR_dt_sciantix[i])/dFR_dt[i] + abs((FR_interpolated[predict_index]-FR_sciantix[predict_index]))/FR_interpolated[predict_index]
                     else:
-                        error_related[i] = (FR_interpolated[i] - FR_sciantix[i])/FR_interpolated[i] + (dFR_dt[i] - dFR_dt_sciantix[i])/dFR_dt[i]
-
-
-                if FR_interpolated[i] == 0 and dFR_dt[i] == 0:
-                    error_related[i] = abs(FR_sciantix[i]) + abs(dFR_dt_sciantix[i])
-                elif FR_interpolated[i] != 0 and dFR_dt[i] == 0:
-                    if FR_interpolated[i] < FR_sciantix[i]:
-                        error_related[i] = abs((FR_interpolated[i] -FR_sciantix[i])/FR_interpolated[i]) + 10 * abs(dFR_dt_sciantix[i])
+                        if FR_sciantix[i] != 0:
+                                error_future = abs(dFR_dt[i] - dFR_dt_sciantix[i])/dFR_dt[i]+ 1
+                        else:
+                            error_future = abs(dFR_dt[i] - dFR_dt_sciantix[i])/dFR_dt[i]
+                else:
+                    if dFR_dt_sciantix[i] > 10e-10:
+                            error_future= 2
                     else:
-                        error_related[i] = abs((FR_interpolated[i] - FR_sciantix[i])/FR_interpolated[i]) + abs(dFR_dt_sciantix[i])
-                elif FR_interpolated[i] == 0 and dFR_dt[i] != 0:
-                    error_related[i] = abs(FR_sciantix[i]) + abs((dFR_dt[i] - dFR_dt_sciantix[i])/dFR_dt[i])
-                else:# FR_interpolated[i] !=0 and dFR_dt[i] != 0:
-                    if FR_interpolated[i] < FR_sciantix[i] and dFR_dt[i] < dFR_dt_sciantix[i]:
-                        error_related[i] = abs((FR_interpolated[i] -FR_sciantix[i])/FR_interpolated[i]) + 10 * abs((dFR_dt[i] - dFR_dt_sciantix[i])/dFR_dt[i])
+                        error_future = 0
+                
+                if FR_interpolated[i] != 0:
+                    if abs((FR_interpolated[i] - FR_sciantix[i])/FR_interpolated[i]) < 0.05:
+                        error_related[i] = error_integral + error_now + error_future
                     else:
-                        error_related[i] = abs((FR_interpolated[i] - FR_sciantix[i])/FR_interpolated[i]) + abs((dFR_dt[i] - dFR_dt_sciantix[i])/dFR_dt[i])
+                        error_related[i] = 3*error_now
+                # print(i,error_related[i])
+                # if FR_interpolated[i] != 0:
+                #     error_related[i] = abs(FR_interpolated[i] - FR_sciantix[i])/FR_interpolated[i] + abs(FR_interpolated[predict_index] - FR_sciantix[predict_index])/FR_interpolated[i] + abs(FR_interpolated[prior_index] - FR_sciantix[prior_index])/FR_interpolated[i]
+                    
+                # else:
+                #     if FR_sciantix[i] != 0:
+                #             error_related[i] = 1
+                #     else:
+                #         error_related[i] = 0
+            # print(error_related)
 
-
-            ########
-            # error function: consider FR error
-            ########
-
-            ########
-            # error function: consider RR error
-            ########
-
-            ########
-            # error function: consider FR and RR error
-            ########
-
-            ########
-            # error function: consider FR in region 1, consider RR in region 2
-            ########
-
-
-
-            error = np.sum(error_related)
+            error =  np.sum(error_related)
             print(f"current error: {error}")
-
-            # plt.plot(time_sciantix,self.FR)
-            # plt.plot(time_sciantix,FR_sciantix)
-            # plt.show()
             return error
-
-        
 
 
         results = optimize.minimize(costFunction,self.sf_selected_initial_value, method = 'SLSQP',bounds=self.bounds)
@@ -638,7 +832,25 @@ def interpolate_1D(source_data_x, source_data_y, inserted_x):
     # print(index,inserted_x,source_data_x[index])
     if differences[index] == 0 or index == len(source_data_x)-1 or index == 0:
         value_interpolated = source_data_y[index]
+    elif index == len(source_data_x) -1:
+        find = False
+        for i in range(len(source_data_x)):
+            if np.sign(differences[index - i]) != np.sign(differences[index]):
+                value_interpolated = source_data_y[index - i] + (source_data_y[index] -source_data_y[index-i])/(source_data_x[index]-source_data_x[index-i]) * (inserted_x-source_data_x[index-i])
+                find = True
+                break
+        if find == False:
+            value_interpolated == source_data_y[index]
     
+    elif index == 0:
+        find = False
+        for i in range(len(source_data_x)):
+            if np.sign(differences[index + i]) != np.sign(differences[index]):
+                value_interpolated = source_data_y[index] + (source_data_y[index+i] -source_data_y[index])/(source_data_x[index+i]-source_data_x[index]) * (inserted_x-source_data_x[index])
+                find = True
+                break
+        if find == False:
+            value_interpolated == source_data_y[index]
     else:
         for i in range(min(index, len(source_data_x)-index-1)):
             if np.sign(differences[index - i]) != np.sign(differences[index+i]):
@@ -783,7 +995,7 @@ def do_plot(Talip1320):
 
 # Talip1320 = optimization()
 # Talip1320.setCase("test_Talip2014_1320K")
-# Talip1320.setStartEndTime(3.969,4.536)
+# Talip1320.setStartEndTime(0,5.67)
 # Talip1320.setInitialConditions()
 # Talip1320.setScalingFactors("helium diffusivity pre exponential", "helium diffusivity activation energy","henry constant pre exponential","henry constant activation energy")
 # setInputOutput = inputOutput()
@@ -792,7 +1004,7 @@ def do_plot(Talip1320):
 
 # Talip1320 = optimization()
 # Talip1320.setCase("test_Talip2014_1320K")
-# Talip1320.setStartEndTime(1, 2)
+# Talip1320.setStartEndTime(4.94,5.67)
 # Talip1320.setInitialConditions()
 # Talip1320.setScalingFactors("helium diffusivity pre exponential", "helium diffusivity activation energy","henry constant pre exponential","henry constant activation energy")
 # setInputOutput = inputOutput()
@@ -801,7 +1013,16 @@ def do_plot(Talip1320):
 
 # Talip1320 = optimization()
 # Talip1320.setCase("test_Talip2014_1320K")
-# Talip1320.setStartEndTime(2, 3)
+# Talip1320.setStartEndTime(3.88, 3.98)
+# Talip1320.setInitialConditions()
+# Talip1320.setScalingFactors("helium diffusivity pre exponential", "helium diffusivity activation energy","henry constant pre exponential","henry constant activation energy")
+# setInputOutput = inputOutput()
+# Talip1320.optimization(setInputOutput)
+# do_plot(Talip1320)
+
+# Talip1320 = optimization()
+# Talip1320.setCase("test_Talip2014_1320K")
+# Talip1320.setStartEndTime(3.98, 4.08)
 # Talip1320.setInitialConditions()
 # Talip1320.setScalingFactors("helium diffusivity pre exponential", "helium diffusivity activation energy","henry constant pre exponential","henry constant activation energy")
 # setInputOutput = inputOutput()
@@ -809,25 +1030,47 @@ def do_plot(Talip1320):
 # do_plot(Talip1320)
 
 
-######
-#online optimization-------testing....
-######
+
+# Talip1320 = optimization()
+# Talip1320.setCase("test_Talip2014_1320K")
+# Talip1320.setStartEndTime(4.08, 4.18)
+# Talip1320.setInitialConditions()
+# Talip1320.setScalingFactors("helium diffusivity pre exponential", "helium diffusivity activation energy","henry constant pre exponential","henry constant activation energy")
+# setInputOutput = inputOutput()
+# Talip1320.optimization(setInputOutput)
+# do_plot(Talip1320)
+
+
+
+# #####
+# online optimization-------testing....
+# #####
 t0 = 0
+# tf = 3.7
+# time_points = np.array([[0],[0.5],[1.0],[1.5],[2.5],[3.5],[4.9],[5.67]])
 number_of_interval = 10
+# number_of_interval = len(time_points) - 1
 time_points = np.zeros((number_of_interval+1,1))
 sf_optimized = np.ones((number_of_interval+1,4))
 error_optimized = np.zeros((number_of_interval+1,1))
 results_data = np.empty((number_of_interval+2,6),dtype = object)
 final_data = np.empty((0,4))
 final_data_interpolated = np.empty((0,4))
-for i in range(1,number_of_interval+1):
 
+
+
+
+for i in range(1,number_of_interval+1):
+    # plateauCount = 0
+    # timeCOunt_plateau = 0
+    # plateauTimePoint = np.empty((0,2))
     Talip1320 = optimization()
     Talip1320.setCase("test_Talip2014_1320K")
 
     tf = Talip1320.time_history_original[-1]
     time_points[i] = time_points[i-1]+(tf-t0)/number_of_interval
     time_points[i] = np.round(time_points[i],3)
+    
     Talip1320.setStartEndTime(time_points[i-1][0],time_points[i][0])
     Talip1320.setInitialConditions()
     Talip1320.setScalingFactors("helium diffusivity pre exponential", "helium diffusivity activation energy","henry constant pre exponential","henry constant activation energy")
@@ -837,17 +1080,6 @@ for i in range(1,number_of_interval+1):
     results_data[i+1,0] = time_points[i][0]
     final_data = np.vstack((final_data, Talip1320.final_data))
     final_data_interpolated = np.vstack((final_data_interpolated, Talip1320.final_interpolated))
-
-    # for row in Talip1320.final_data:
-    #     final_data = np.concatenate((final_data, [row]), axis=0)
-
-
-
-    # for row in Talip1320.final_interpolated:
-    #     final_data_interpolated = np.concatenate((final_data_interpolated, [row]), axis=0)
-    # final_data = np.array(final_data,dtype = float)
-    # final_data_interpolated = np.array(final_data_interpolated, dtype = float)
-
 
 results_data[0,0] = "time"
 results_data[0,1:5] = Talip1320.sf_selected
@@ -930,7 +1162,7 @@ os.chdir("..")
 
 
 # ######
-# all start from 0
+# # all start from 0
 # ######
 # t0 = 0
 # number_of_interval = 10
@@ -961,7 +1193,7 @@ os.chdir("..")
 # results_data[1,:] = [0,1.0,1.0,1.0,1.0,0]
 
 
-# with open(f"optimization_{Talip1320.caseName}_{number_of_interval}.txt", 'w') as file:
+# with open(f"optimization_{Talip1320.caseName}_0_{number_of_interval}.txt", 'w') as file:
 #     for row in results_data:
 #         line = "\t".join(map(str, row))
 #         file.write(line + "\n")
