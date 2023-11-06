@@ -1017,7 +1017,7 @@ def do_plot(Talip1320):
 # #####
 
 # tf = 3.7
-ref_points = np.array([[0],[1.5],[4],[4.5],[5.67]])
+ref_points = np.array([[0],[1], [1.5],[4],[4.5],[5.67]])
 time_points = ref_points
 # number_of_interval = 10
 number_of_interval = len(time_points) - 1
