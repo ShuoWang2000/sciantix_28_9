@@ -136,7 +136,7 @@ class optimization():
     def setStartEndTime(self, time_start, time_end):
         self.time_start = time_start
         self.time_end = time_end
-
+        print(self.time_start, self.time_end)
         # now build a new folder in selected benchmark folder
         if self.time_start !=0:
             folder_name = f"Optimization_{time_start}__{time_end}"
@@ -1014,12 +1014,12 @@ def do_plot(Talip1320):
 #####
 # online optimization-------testing....
 # #####
-t0 = 0
+
 # tf = 3.7
-time_points = np.array([[0],[0.5],[1.0],[1.5],[2.5],[3.5],[4.9],[5.67]])
+time_points = np.array([[0.5],[1.0],[1.5],[2.5],[3.5],[4.9],[5.67]])
 # number_of_interval = 10
 number_of_interval = len(time_points) - 1
-time_points = np.zeros((number_of_interval+1,1))
+
 sf_optimized = np.ones((number_of_interval+1,2))
 error_optimized = np.zeros((number_of_interval+1,1))
 results_data = np.empty((number_of_interval+2,4),dtype = object)
@@ -1041,6 +1041,7 @@ for i in range(1,number_of_interval+1):
     # time_points[i] = np.round(time_points[i],3)
     
     Talip1320.setStartEndTime(time_points[i-1][0],time_points[i][0])
+    
     Talip1320.setInitialConditions()
     # Talip1320.setScalingFactors("helium diffusivity pre exponential", "helium diffusivity activation energy","henry constant pre exponential","henry constant activation energy")
     Talip1320.setScalingFactors("helium diffusivity pre exponential", "helium diffusivity activation energy")
