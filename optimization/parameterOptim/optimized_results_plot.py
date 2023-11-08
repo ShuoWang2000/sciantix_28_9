@@ -37,7 +37,7 @@ current_directory = os.getcwd()
 
 keyword = "Optimization_0_"
 folder1_collection = []
-pattern = r'Optimization_\d+_(\d+\.\d+)'
+pattern = r'Optimization_\d+_(\d+\.\d+)_'
 find = False
 for folder_name in os.listdir(current_directory):
     folder_path = os.path.join(current_directory, folder_name)
@@ -76,7 +76,7 @@ length0 = len(data0)
 os.chdir(current_directory)
 
 keyword2 = "Optimization_"
-pattern2 = r'Optimization_(\d+\.\d+)+__(\d+\.\d+)'
+pattern2 = r'Optimization_(\d+\.\d+)+__(\d+\.\d+)_'
 
 folder2_collection = []
 find2 = False

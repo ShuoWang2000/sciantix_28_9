@@ -6,6 +6,7 @@ matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 import scipy.optimize as optimize
 from scipy.optimize import Bounds
+import pandas
 
 class inputOutput():
 	def __init__(self):
@@ -17,19 +18,40 @@ class inputOutput():
 		temperature_start = interpolate_1D(time_history_original, temperature_history_original, time_start)
 		temperature_end = interpolate_1D(time_history_original, temperature_history_original, time_end)
 
-		if time_start == 0:
-			index_start = 0
-		else:
-			index_start = np.where(time_history_original < time_start)[0][-1]
-		if time_end >= time_history_original[-1]:
-			index_end = len(time_history_original)-1
-		else:
-			index_end = np.where(time_history_original > time_end)[0][0]
+		# for i in range(len(time_history_original)):
+		# 	if time_start == time_history_original[i]:
+		# 		index_start = np.where(time_history_original == time_start)[0][0]
+		# 		break
+		# 	else:
+		# 		index_start = np.where(time_history_original < time_start)[0][-1]
 		
-		new_history = history_original[index_start:index_end+1,:].copy()
-		new_history[0,0:2] = [time_start, temperature_start]
-		new_history[-1,0:2] = [time_end, temperature_end]
-		new_history[:,0] = new_history[:,0] - time_start
+		# # print(index_start)
+		# # print(time_end, time_history_original[6])
+		# print(len(time_history_original))
+		# for j in range(len(time_history_original)):
+		# 	print(j)
+			
+		# 	if time_end == time_history_original[j]:
+		# 		index_end = np.where(time_history_original == time_end)[0][0]
+		# 		print(index_end)
+		# 		break
+		# 	else:
+		# 		index_end = np.where(time_history_original > time_end)[0][0]
+			
+		# print(index_start, index_end)
+		index_start = np.where(time_history_original <= time_start)[0][-1]
+		index_end = np.where(time_history_original >= time_end)[0][0]
+		if index_start != index_end:
+
+			new_history = history_original[index_start:index_end+1,:].copy()
+			new_history[0,0:2] = [time_start, temperature_start]
+			new_history[-1,0:2] = [time_end, temperature_end]
+			new_history[:,0] = new_history[:,0] - time_start
+		else:
+			new_history = history_original[index_start:index_end+2,:].copy()
+			new_history[0,0:2] = [time_start, temperature_start]
+			new_history[-1,0:2] = [time_end, temperature_end]
+			new_history[:,0] = new_history[:,0] - time_start
 
 		new_history = [[str(item) for item in row] for row in new_history]
 		
@@ -127,9 +149,9 @@ class optimization():
 		self.time_end = time_end
 
 		if self.time_start !=0:
-			folder_name = f"Optimization_{self.time_start}__{self.time_end}"
+			folder_name = f"Optimization_{self.time_start}__{self.time_end}_"
 		else:
-			folder_name = f"Optimization_0_{self.time_end}"
+			folder_name = f"Optimization_0_{self.time_end}_"
 		
 		if not os.path.exists(folder_name):
 			os.makedirs(folder_name)
@@ -164,8 +186,8 @@ class optimization():
 			ic_intraGrainBubbleRadius_origin = np.array(values)
 
 		if self.time_start != 0:
-			keyword1 = f"__{self.time_start}"
-			keyword2 = f"Optimization_0_{self.time_start}"
+			keyword1 = f"__{self.time_start}_"
+			keyword2 = f"Optimization_0_{self.time_start}_"
 			find1 = False
 			find2 = False
 			for folder_name in os.listdir(parent_directory):
@@ -179,6 +201,7 @@ class optimization():
 			
 			if find1 == True:
 				os.chdir(folder_path1)
+				print(folder_path1)
 				self.folder_path_previous_optimization = folder_path1
 
 			else:
@@ -483,6 +506,9 @@ class optimization():
 
 			self.FR = FR_interpolated
 			self.RR = RR_interpolated
+			self.time = time_sciantix
+			# print(self.time)
+			self.temperature = temperature_sciantix
 			
 			# writing 
 			data = np.column_stack((self.FR, self.RR))
@@ -495,8 +521,8 @@ class optimization():
 			print(f"Current value: {sf_selected_value}")
 
 			# error function
-			error = max(abs(FR_interpolated - FR_sciantix))
-
+			# error = max(abs(FR_interpolated - FR_sciantix))
+			error = 0
 			print(f"Current error: {error}")
 			return error
 		
@@ -518,8 +544,8 @@ class optimization():
 		# - 'trust-krylov' :ref:`(see here) <optimize.minimize-trustkrylov>`
 
 		# results = optimize.minimize(costFunction, self.sf_selected_initial_value, method = 'COBYLA', bounds=self.bounds, tol=0.001, options={'disp': True})
-		results = optimize.minimize(costFunction, self.sf_selected_initial_value, method = 'Nelder-Mead', bounds=self.bounds, tol=0.001, options={'xatol': 1e-8, 'disp': True})
-		
+		# results = optimize.minimize(costFunction, self.sf_selected_initial_value, method = 'Nelder-Mead', bounds=self.bounds, tol=0.001, options={'xatol': 1e-8, 'disp': True})
+		results = optimize.minimize(costFunction, self.sf_selected_initial_value)
 		# List of available GLOBAL optimization methods
 		# ---------------------------------------------
 		# basinhopping(func, x0[, niter, T, stepsize, ...]) # Find the global minimum of a function using the basin-hopping algorithm.
@@ -531,30 +557,34 @@ class optimization():
 		
 		# results = optimize.differential_evolution(func=costFunction, bounds=self.bounds, args=(), strategy='best1bin', maxiter=1000, popsize=15, tol=0.01, mutation=(0.5, 1), recombination=0.7, seed=None, callback=None, disp=False, polish=True, init='latinhypercube', atol=0, updating='immediate', workers=1, constraints=(), x0=None, integrality=None, vectorized=False)
 
-		self.optimization_results = np.zeros(len(self.sf_selected)+1)
-		for i in range(len(self.sf_selected)):
-			self.scaling_factors[self.sf_selected[i]] = results.x[i]
-			self.optimization_results[i] = results.x[i]
-			print(f"{self.sf_selected[i]}:{results.x[i]}")
-		print(f"Final error:{results.fun}")
-		self.optimization_results[-1] = results.fun
+		# self.optimization_results = np.zeros(len(self.sf_selected)+1)
+		# for i in range(len(self.sf_selected)):
+		# 	self.scaling_factors[self.sf_selected[i]] = results.x[i]
+		# 	self.optimization_results[i] = results.x[i]
+		# 	print(f"{self.sf_selected[i]}:{results.x[i]}")
+		# print(f"Final error:{results.fun}")
+		# self.optimization_results[-1] = results.fun
 		
-		with open("input_scaling_factors.txt",'w') as file:
-			for key, value in self.scaling_factors.items():
-				file.write(f'{value}\n')
-				file.write(f'# scaling factor - {key}\n')
-		os.system("./sciantix.x")
+		# with open("input_scaling_factors.txt",'w') as file:
+		# 	for key, value in self.scaling_factors.items():
+		# 		file.write(f'{value}\n')
+		# 		file.write(f'# scaling factor - {key}\n')
+		# os.system("./sciantix.x")
 
-		self.final_data = getSelectedVariablesValueFromOutput(np.array(["Time (h)","Temperature (K)","He fractional release (/)", "He release rate (at/m3 s)"]),"output.txt")
-		self.final_data[:,0] = self.final_data[:,0]+self.time_start
-		final_interpolated = np.zeros_like(self.final_data)
-		final_interpolated[:,0:2] = self.final_data[:,0:2]
-		final_interpolated[:,2] = self.FR
-		final_interpolated[:,3] = self.RR
-		self.final_interpolated = final_interpolated
+		# self.final_data = getSelectedVariablesValueFromOutput(np.array(["Time (h)","Temperature (K)","He fractional release (/)", "He release rate (at/m3 s)"]),"output.txt")
+		# self.final_data[:,0] = self.final_data[:,0]+self.time_start
+		# final_interpolated = np.zeros_like(self.final_data)
+		# final_interpolated[:,0:2] = self.final_data[:,0:2]
+		# final_interpolated[:,2] = self.FR
+		# final_interpolated[:,3] = self.RR
+		# self.final_interpolated = final_interpolated
 
+		# self.interpolated_data = np.zeros((len(self.FR),4))
+		# self.interpolated_data[:,0] =
+
+		
 		os.chdir('../..')
-
+		results = 1
 		return results
 
 # helpful functions
@@ -614,57 +644,117 @@ def findClosedIndex_2D(source_data1, source_data2, targetElement1, targetElement
 	index = np.argmin(differences)
 	return index
 
-def interpolate_1D(source_data_x, source_data_y, inserted_x):
-	differences = np.array([(x - inserted_x) for x in source_data_x])
+# def interpolate_1D(source_data_x, source_data_y, inserted_x):
+# 	differences = np.array([(x - inserted_x) for x in source_data_x])
 
-	index = np.argmin(abs(differences))
+# 	index = np.argmin(abs(differences))
 
-	if differences[index] == 0 or index == len(source_data_x)-1 or index == 0:
-		value_interpolated = source_data_y[index]
-	elif index == len(source_data_x) -1:
-		find = False
-		for i in range(len(source_data_x)):
-			if np.sign(differences[index - i]) != np.sign(differences[index]):
-				value_interpolated = source_data_y[index - i] + (source_data_y[index] -source_data_y[index-i])/(source_data_x[index]-source_data_x[index-i]) * (inserted_x-source_data_x[index-i])
-				find = True
-				break
-		if find == False:
-			value_interpolated == source_data_y[index]
+# 	if differences[index] == 0 or index == len(source_data_x)-1 or index == 0:
+# 		value_interpolated = source_data_y[index]
+# 	elif index == len(source_data_x) -1:
+# 		find = False
+# 		for i in range(len(source_data_x)):
+# 			if np.sign(differences[index - i]) != np.sign(differences[index]):
+# 				value_interpolated = source_data_y[index - i] + (source_data_y[index] -source_data_y[index-i])/(source_data_x[index]-source_data_x[index-i]) * (inserted_x-source_data_x[index-i])
+# 				find = True
+# 				break
+# 		if find == False:
+# 			value_interpolated == source_data_y[index]
 	
-	elif index == 0:
-		find = False
-		for i in range(len(source_data_x)):
-			if np.sign(differences[index + i]) != np.sign(differences[index]):
-				value_interpolated = source_data_y[index] + (source_data_y[index+i] -source_data_y[index])/(source_data_x[index+i]-source_data_x[index]) * (inserted_x-source_data_x[index])
-				find = True
-				break
-		if find == False:
-			value_interpolated == source_data_y[index]
-	else:
-		for i in range(min(index, len(source_data_x)-index-1)):
-			if np.sign(differences[index - i]) != np.sign(differences[index+i]):
-				index_low = index-i
-				index_up = index+i
-				up_y = source_data_y[index_up]
-				low_y = source_data_y[index_low]
-				up_x = source_data_x[index_up]
-				low_x = source_data_x[index_low]
-				if up_x == low_x:
-					value_interpolated = source_data_y[index]
-				else:
-					slop = (up_y - low_y)/(up_x-low_x)
-					value_interpolated = low_y + slop * (inserted_x - low_x)
-				break
-			else:
-				value_interpolated = source_data_y[index]
-				break
+# 	elif index == 0:
+# 		find = False
+# 		for i in range(len(source_data_x)):
+# 			if np.sign(differences[index + i]) != np.sign(differences[index]):
+# 				value_interpolated = source_data_y[index] + (source_data_y[index+i] -source_data_y[index])/(source_data_x[index+i]-source_data_x[index]) * (inserted_x-source_data_x[index])
+# 				find = True
+# 				break
+# 		if find == False:
+# 			value_interpolated == source_data_y[index]
+# 	else:
+# 		for i in range(min(index, len(source_data_x)-index-1)):
+# 			if np.sign(differences[index - i]) != np.sign(differences[index+i]):
+# 				index_low = index-i
+# 				index_up = index+i
+# 				up_y = source_data_y[index_up]
+# 				low_y = source_data_y[index_low]
+# 				up_x = source_data_x[index_up]
+# 				low_x = source_data_x[index_low]
+# 				if up_x == low_x:
+# 					value_interpolated = source_data_y[index]
+# 				else:
+# 					slop = (up_y - low_y)/(up_x-low_x)
+# 					value_interpolated = low_y + slop * (inserted_x - low_x)
+# 				break
+# 			else:
+# 				value_interpolated = source_data_y[index]
+# 				break
 
-	return value_interpolated
+# 	return value_interpolated
+
+def interpolate_1D(source_data_x, source_data_y, inserted_x):
+	"""
+	inserted_x has to be within the range of source_data_x
+	
+	"""
+	up_bound = max(source_data_x)
+	low_bound = min(source_data_x)
+	if inserted_x > up_bound or inserted_x < low_bound:
+		raise ValueError("interpolated_1D: inserted_x is out of the source_data_x range")
+	
+	difference = source_data_x - inserted_x
+	index_min_difference = np.argmin(abs(difference))
+	if difference[index_min_difference] == 0:
+		interpolated_value = source_data_y[index_min_difference]
+	# elif source_data_x[index_min_difference] == max(source_data_x):
+	# 	low_x = source_data_x[index_min_difference-1]
+	# 	up_x = source_data_x[index_min_difference]
+	# 	up_y = source_data_y[index_min_difference]
+	# 	low_x = source_data_y[index_min_difference - 1]
+	# 	slop = (up_y -low_y)/(up_x-low_x)
+	# 	interpolated_value  = low_x + slop * (inserted_x - low_x)
+	# elif inserted_x == min(source_data_x):
+	# 	low_x = source_data_x[index_min_difference]
+	# 	up_x = source_data_x[index_min_difference+1]
+	# 	up_y = source_data_y[index_min_difference+1]
+	# 	low_x = source_data_y[index_min_difference]
+	# 	slop = (up_y -low_y)/(up_x-low_x)
+	# 	interpolated_value  = low_x + slop * (inserted_x - low_x)
+
+	else:
+		if inserted_x > source_data_x[index_min_difference]:
+			for i in range(index_min_difference):
+				for j in range(1,len(source_data_x)-index_min_difference - 1):
+					if np.sign(difference[index_min_difference - i]) != np.sign(difference[index_min_difference + j]):
+						low_x = source_data_x[index_min_difference-i]
+						up_x = source_data_x[index_min_difference + j]
+						low_y = source_data_y[index_min_difference-i]
+						up_y = source_data_y[index_min_difference+j]
+						slop = (up_y - low_y)/(up_x-low_x)
+						interpolated_value = low_y + slop*(inserted_x - low_x)
+						break
+			interpolated_value = source_data_y[index_min_difference]
+
+		else:# inserted_x < source_data_x[index_min_difference]:
+			for i in range(len(source_data_x) - index_min_difference - 1):
+				for j in range(1,index_min_difference):
+					if np.sign(difference[index_min_difference + i]) != np.sign(difference[index_min_difference - j]):
+						low_x = source_data_x[index_min_difference - j]
+						up_x = source_data_x[index_min_difference + i]
+						low_y = source_data_y[index_min_difference -j]
+						up_y = source_data_y[index_min_difference + i]
+						slop = (up_y - low_y)/(up_x-low_x)
+						interpolated_value = low_y + slop*(inserted_x - low_x)
+						break
+			interpolated_value = source_data_y[index_min_difference]
+
+	return interpolated_value
+
+
 
 def interpolate_2D(source_data_x, source_data_y, inserted_x, inserted_y):
 
 	differences1 = np.array([abs((x - inserted_x)/inserted_x) for x in source_data_x])
-	index_x = np.where(differences1<0.02)[0]
+	index_x = np.where(differences1<0.03)[0]
 	source_data_y_x = source_data_y[index_x]
 	if inserted_y == 0:
 		value_interpolated = np.average(source_data_y_x)
@@ -772,80 +862,215 @@ def do_plot(Talip1320):
 
 # ONLINE optimization
 
-start = 0
-end = 5.67
-num_steps = 30
-ref_points = np.linspace(start, end, num_steps).reshape(-1, 1).round(2)
 
-ref_points = np.array([[0], [0.6], [1.5], [4],[4.5],[5.67]])
+#######################
+ref_points = np.array([[0], [0.434], [0.694], [3.686],[4.494],[5.583],[5.67]])
+ref_case = "test_Talip2014_1320K"
+
+# ref_points = np.array([[0], [0.425], [0.6112], [3.559],[4.269],[4.5],[4.56], [4.716]])
+# ref_case = "test_Talip2014_1400K_b"
+
+# ref_points = np.array([[0],[1.388],[2.466],[2.746],[2.798]])
+# ref_case = "test_Talip2014_1400K_c"
+
+# ref_points = np.array([[0],[0.37],[0.744],[3.65],[3.867]])
+# ref_case = "test_Talip2014_1600K"
+
+# ref_points = np.array([[0],[0.344],[0.818],[3.79889],[4.123]])
+# ref_case = "test_Talip2014_1800K"
+
+
+
+
+
+
+
 time_points = ref_points
+
 number_of_interval = len(time_points) - 1
-
-sf_optimized = np.ones((number_of_interval+1,2))
-error_optimized = np.zeros((number_of_interval+1,1))
-results_data = np.empty((number_of_interval+2,4),dtype = object)
-final_data = np.empty((0,4))
-final_data_interpolated = np.empty((0,4))
-
+time_new = np.empty((0))
+temperature_new = np.empty((0))
+RR_interp = np.empty((0))
+FR_interp = np.empty((0))
+length = np.zeros((number_of_interval+1))
+length[0] = 0
 for i in range(1,number_of_interval+1):
 	Talip1320 = optimization()
-	Talip1320.setCase("test_Talip2014_1320K")
+	Talip1320.setCase(ref_case)
 	
 	Talip1320.setStartEndTime(time_points[i-1][0],time_points[i][0])
 
 	Talip1320.setInitialConditions()
 	Talip1320.setScalingFactors("helium diffusivity pre exponential", "helium diffusivity activation energy")
-	
+
 	setInputOutput = inputOutput()
 
 	Talip1320.optimization(setInputOutput)
+	length[i] = len(Talip1320.FR)
 
-	results_data[i+1,1:] = Talip1320.optimization_results
-	results_data[i+1,0] = time_points[i][0]
-	final_data = np.vstack((final_data, Talip1320.final_data))
-	final_data_interpolated = np.vstack((final_data_interpolated, Talip1320.final_interpolated))
+	time_new = np.hstack((time_new, Talip1320.time))
+	temperature_new = np.hstack((temperature_new, Talip1320.temperature))
+	RR_interp = np.hstack((RR_interp, Talip1320.RR))
+	FR_interp = np.hstack((FR_interp, Talip1320.FR))
 
-results_data[0,0] = "time"
-results_data[0,1:3] = Talip1320.sf_selected
-results_data[0,3] = "error"
-results_data[1,:] = [0,1.0,1.0,0]
+# print(time_new)
+# print(temperature_new)
 
-with open(f"optimization_online.txt", 'w') as file:
-	for row in results_data:
-		line = "\t".join(map(str, row))
-		file.write(line + "\n")
+for i in range(1,len(length)):
+	length[i] = length[i-1] + length[i]
 
-# OFFLINE optimization
+os.chdir(ref_case)
 
-ref_points = np.array([[0],[5.67]])
-# time_points = ref_points
-number_of_interval = len(time_points) - 1
+cloumnsFR  = np.genfromtxt("Talip2014_release_data.txt",dtype = 'float',delimiter='\t')
+cloumnsRR = np.genfromtxt("Talip2014_rrate_data.txt",dtype = 'float',delimiter='\t')
+variable_selected = np.array(["Time (h)","Temperature (K)","He fractional release (/)", "He release rate (at/m3 s)"])
+coloumnsOutput_nominal = getSelectedVariablesValueFromOutput(variable_selected,"output.txt")
 
-sf_optimized = np.ones((number_of_interval+1,2))
-error_optimized = np.zeros((number_of_interval+1,1))
-results_data = np.empty((number_of_interval+2,4),dtype = object)
-final_data = np.empty((0,4))
-final_data_interpolated = np.empty((0,4))
+time_exp  = cloumnsFR[:,0]
+FR_exp = cloumnsFR[:,1]
+temperature_exp = cloumnsRR[:,0]
+RR_exp = cloumnsRR[:,1]
+
+time_sciantix = coloumnsOutput_nominal[:,0]
+temperature_sciantix = coloumnsOutput_nominal[:,1]
+FR_nominal = coloumnsOutput_nominal[:,2]
+RR_nominal = coloumnsOutput_nominal[:,3]
+
+
+
+
+
+fig, ax = plt.subplots(1,2)
+plt.subplots_adjust(left=0.1,
+                    bottom=0.1,
+                    right=0.9,
+                    top=0.9,
+                    wspace=0.34,
+                    hspace=0.4)
+
+ax[0].scatter(time_exp, FR_exp, marker = '.', c = '#B3B3B3', label='Data from Talip et al. (2014)')
+ax[0].plot(time_sciantix, FR_nominal, 'g', label='SCIANTIX 2.0 - Nominal')
+# ax[0].plot(data_global[:,0], data_global[:,2], label = "Offline optimization" )
+# ax[0].scatter(time_new[0:length0], FR_new[0:length0], label = 'Online optimization')
 
 for i in range(1,number_of_interval+1):
+	ax[0].scatter(time_new[int(length[i-1]):int(length[i])], FR_interp[int(length[i-1]):int(length[i])], label = None)
+# ax[0].scatter(time_new[length0:int(length[0])], FR_new[length0:int(length[0])], marker = 'x',label = f'optimized_0.567__1.134')
 
-	Talip1320 = optimization()
-	Talip1320.setCase("test_Talip2014_1320K")
 
-	Talip1320.setStartEndTime(0,time_points[i][0])
-	Talip1320.setInitialConditions()
-	Talip1320.setScalingFactors("helium diffusivity pre exponential", "helium diffusivity activation energy")
-	setInputOutput = inputOutput()
-	Talip1320.optimization(setInputOutput)
-	results_data[i+1,1:] = Talip1320.optimization_results
-	results_data[i+1,0] = time_points[i][0]
+# ax[0].scatter(time_new, FR_interpolated, marker = 'x',color = 'blue',label = 'interpolated')
+axT = ax[0].twinx()
+axT.set_ylabel('Temperature (K)')
+axT.plot(time_sciantix, temperature_sciantix, 'r', linewidth=1, label="Temperature")
+for i in range(1,number_of_interval+1):
+	axT.plot(time_new[int(length[i-1]):int(length[i])], temperature_new[int(length[i-1]):int(length[i])], label =None)
 
-results_data[0,0] = "time"
-results_data[0,1:3] = Talip1320.sf_selected
-results_data[0,3] = "error"
-results_data[1,:] = [0,1.0,1.0,0]
+ax[0].set_xlabel('Time (h)')
+ax[0].set_ylabel('Helium fractional release (/)')
+h1, l1 = ax[0].get_legend_handles_labels()
+h2, l2 = axT.get_legend_handles_labels()
+# ax[0].legend(h1+h2, l1+l2)
+ax[0].legend(loc = 'upper left')
 
-with open(f"optimization_offline.txt", 'w') as file:
-	for row in results_data:
-		line = "\t".join(map(str, row))
-		file.write(line + "\n")
+""" Plot: Helium release rate """
+ax[1].scatter(temperature_exp, RR_exp, marker = '.', c = '#B3B3B3', label='Data from Talip et al. (2014)')
+ax[1].plot(temperature_sciantix, RR_nominal, 'g', label='SCIANTIX 2.0 - Nominal')
+# ax[1].plot(data_global[:,1], data_global[:,3], label = "Offline optimization")
+# ax[1].scatter(temperature_new[0:length0], RR_new[0:length0],label = 'Online optimization')
+for i in range(1,number_of_interval+1):
+    ax[1].scatter(temperature_new[int(length[i-1]):int(length[i])], RR_interp[int(length[i-1]):int(length[i])], label = None)
+
+# ax.set_title(file + ' - Release rate')
+ax[1].set_xlabel('Temperature (K)')
+ax[1].set_ylabel('Helium release rate (at m${}^{-3}$ s${}^{-1}$)')
+ax[1].legend()
+
+# plt.savefig(file + '.png')
+plt.show()
+
+
+
+
+
+
+
+
+
+#######################
+# start = 0
+# end = 5.67
+# num_steps = 30
+# ref_points = np.linspace(start, end, num_steps).reshape(-1, 1).round(2)
+
+# ref_points = np.array([[0], [0.6], [1.5], [4],[4.5],[5.67]])
+# time_points = ref_points
+# number_of_interval = len(time_points) - 1
+
+# sf_optimized = np.ones((number_of_interval+1,2))
+# error_optimized = np.zeros((number_of_interval+1,1))
+# results_data = np.empty((number_of_interval+2,4),dtype = object)
+# final_data = np.empty((0,4))
+# final_data_interpolated = np.empty((0,4))
+
+# for i in range(1,number_of_interval+1):
+# 	Talip1320 = optimization()
+# 	Talip1320.setCase("test_Talip2014_1320K")
+	
+# 	Talip1320.setStartEndTime(time_points[i-1][0],time_points[i][0])
+
+# 	Talip1320.setInitialConditions()
+# 	Talip1320.setScalingFactors("helium diffusivity pre exponential", "helium diffusivity activation energy")
+	
+# 	setInputOutput = inputOutput()
+
+# 	Talip1320.optimization(setInputOutput)
+
+# 	results_data[i+1,1:] = Talip1320.optimization_results
+# 	results_data[i+1,0] = time_points[i][0]
+# 	final_data = np.vstack((final_data, Talip1320.final_data))
+# 	final_data_interpolated = np.vstack((final_data_interpolated, Talip1320.final_interpolated))
+
+# results_data[0,0] = "time"
+# results_data[0,1:3] = Talip1320.sf_selected
+# results_data[0,3] = "error"
+# results_data[1,:] = [0,1.0,1.0,0]
+
+# with open(f"optimization_online.txt", 'w') as file:
+# 	for row in results_data:
+# 		line = "\t".join(map(str, row))
+# 		file.write(line + "\n")
+
+# # OFFLINE optimization
+
+# ref_points = np.array([[0],[5.67]])
+# # time_points = ref_points
+# number_of_interval = len(time_points) - 1
+
+# sf_optimized = np.ones((number_of_interval+1,2))
+# error_optimized = np.zeros((number_of_interval+1,1))
+# results_data = np.empty((number_of_interval+2,4),dtype = object)
+# final_data = np.empty((0,4))
+# final_data_interpolated = np.empty((0,4))
+
+# for i in range(1,number_of_interval+1):
+
+# 	Talip1320 = optimization()
+# 	Talip1320.setCase("test_Talip2014_1320K")
+
+# 	Talip1320.setStartEndTime(0,time_points[i][0])
+# 	Talip1320.setInitialConditions()
+# 	Talip1320.setScalingFactors("helium diffusivity pre exponential", "helium diffusivity activation energy")
+# 	setInputOutput = inputOutput()
+# 	Talip1320.optimization(setInputOutput)
+# 	results_data[i+1,1:] = Talip1320.optimization_results
+# 	results_data[i+1,0] = time_points[i][0]
+
+# results_data[0,0] = "time"
+# results_data[0,1:3] = Talip1320.sf_selected
+# results_data[0,3] = "error"
+# results_data[1,:] = [0,1.0,1.0,0]
+
+# with open(f"optimization_offline.txt", 'w') as file:
+# 	for row in results_data:
+# 		line = "\t".join(map(str, row))
+# 		file.write(line + "\n")
