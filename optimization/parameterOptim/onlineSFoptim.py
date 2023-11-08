@@ -80,11 +80,17 @@ class inputOutput():
 
 		with open("input_scaling_factors.txt",'w') as file:
 			for key, value in scaling_factors.items():
-				file.write(f'{value}\n')
-				file.write(f'# scaling factor - {key}\n')
+				if(f'{key}' == 'helium diffusivity pre exponential'):
+					file.write(f'{np.exp(value)}\n')
+					file.write(f'# scaling factor - {key}\n')
+					print(np.exp(value))
+				else:
+					file.write(f'{value}\n')
+					file.write(f'# scaling factor - {key}\n')		
 		
 		self.sf_selected_value = sf_selected_value
 
+		# sciantix simulation during optimization
 		os.system("./sciantix.x")
 	
 	def readOutput(self):
@@ -213,7 +219,7 @@ class optimization():
 				self.scaling_factors[sf_name[-1]] = value
 				i += 2
 			
-		else:
+		else: # self.time_start == 0:
 			os.chdir(current_directory)
 			ic_new = ic_origin
 			ic_grainRadius = ic_grainRadius_origin
@@ -233,6 +239,8 @@ class optimization():
 				sf_name.append(lines[i + 1].strip()[len("# scaling factor - "):])
 				self.scaling_factors[sf_name[-1]] = value
 				i += 2
+
+			self.scaling_factors['helium diffusivity pre exponential'] = 0.0
 
 		self.ic_new = ic_new
 		self.ic_grainRadius = ic_grainRadius
@@ -258,8 +266,8 @@ class optimization():
 		self.sf_selected_bounds = np.zeros([2,len(self.sf_selected_initial_value)])
 		for i in range(len(self.sf_selected)):
 			if self.sf_selected[i] == "helium diffusivity pre exponential":
-				self.sf_selected_bounds[0,i] = 0.05
-				self.sf_selected_bounds[1,i] = 19.9
+				self.sf_selected_bounds[0,i] = np.log(0.05)
+				self.sf_selected_bounds[1,i] = np.log(19.9)
 			elif self.sf_selected[i] == "helium diffusivity activation energy":
 				self.sf_selected_bounds[0,i] = 0.835
 				self.sf_selected_bounds[1,i] = 1.2
@@ -521,7 +529,7 @@ class optimization():
 		# - 'trust-krylov' :ref:`(see here) <optimize.minimize-trustkrylov>`
 
 		# results = optimize.minimize(costFunction, self.sf_selected_initial_value, method = 'COBYLA', bounds=self.bounds, tol=0.001, options={'disp': True})
-		results = optimize.minimize(costFunction, self.sf_selected_initial_value, method = 'Nelder-Mead', bounds=self.bounds, tol=0.001, options={'xatol': 1e-8, 'disp': True})
+		# results = optimize.minimize(costFunction, self.sf_selected_initial_value, method = 'Nelder-Mead', bounds=self.bounds, tol=0.001, options={'xatol': 1e-8, 'disp': True})
 		# results = optimize.minimize(costFunction, self.sf_selected_initial_value)
 		
 		# List of available GLOBAL optimization methods
@@ -533,7 +541,7 @@ class optimization():
 		# dual_annealing(func, bounds[, args, ...]) # Find the global minimum of a function using Dual Annealing.
 		# direct(func, bounds, *[, args, eps, maxfun, ...])	# Finds the global minimum of a function using the DIRECT algorithm.
 		
-		# results = optimize.differential_evolution(func=costFunction, bounds=self.bounds, args=(), strategy='best1bin', maxiter=1000, popsize=15, tol=0.01, mutation=(0.5, 1), recombination=0.7, seed=None, callback=None, disp=False, polish=True, init='latinhypercube', atol=0, updating='immediate', workers=1, constraints=(), x0=None, integrality=None, vectorized=False)
+		results = optimize.differential_evolution(func=costFunction, bounds=self.bounds, args=(), strategy='best1bin', maxiter=1000, popsize=15, tol=0.01, mutation=(0.5, 1), recombination=0.7, seed=None, callback=None, disp=False, polish=True, init='latinhypercube', atol=0, updating='immediate', workers=1, constraints=(), x0=None, integrality=None, vectorized=False)
 
 		self.optimization_results = np.zeros(len(self.sf_selected)+1)
 		for i in range(len(self.sf_selected)):
@@ -545,8 +553,14 @@ class optimization():
 		
 		with open("input_scaling_factors.txt",'w') as file:
 			for key, value in self.scaling_factors.items():
-				file.write(f'{value}\n')
-				file.write(f'# scaling factor - {key}\n')
+				if(f'{key}' == 'helium diffusivity pre exponential'):
+					file.write(f'{np.exp(value)}\n')
+					file.write(f'# scaling factor - {key}\n')
+				else:
+					file.write(f'{value}\n')
+					file.write(f'# scaling factor - {key}\n')	
+		
+		# sciantix simulation with optimized sf
 		os.system("./sciantix.x")
 
 		self.final_data = getSelectedVariablesValueFromOutput(np.array(["Time (h)","Temperature (K)","He fractional release (/)", "He release rate (at/m3 s)"]),"output.txt")
@@ -556,9 +570,6 @@ class optimization():
 		final_interpolated[:,2] = self.FR
 		final_interpolated[:,3] = self.RR
 		self.final_interpolated = final_interpolated
-
-
-
 		
 		os.chdir('../..')
 		return results
@@ -634,7 +645,6 @@ def interpolate_1D(source_data_x, source_data_y, inserted_x):
 	index_min_difference = np.argmin(abs(difference))
 	if difference[index_min_difference] == 0:
 		interpolated_value = source_data_y[index_min_difference]
-	
 	
 	else:
 		if inserted_x > source_data_x[index_min_difference]:
@@ -770,149 +780,25 @@ def do_plot(Talip1320):
 	os.chdir("../..")
 
 # ONLINE optimization
+#####################
 
-
-#######################
-# # ref_points = np.array([[0], [0.434], [0.694], [3.686],[4.494],[5.583],[5.67]])
-# # ref_case = "test_Talip2014_1320K"
-
-# # ref_points = np.array([[0], [0.425], [0.6112], [3.559],[4.269],[4.5],[4.56], [4.716]])
-# ref_points = np.array([[0], [0.3], [0.8], [1.0],[2.0],[3],[4],[4.5],[4.716]])
-# ref_case = "test_Talip2014_1400K_b"
-
-# # ref_points = np.array([[0],[1.388],[2.466],[2.746],[2.798]])
-# # ref_case = "test_Talip2014_1400K_c"
-
-# # ref_points = np.array([[0],[0.37],[0.744],[3.65],[3.867]])
-# # ref_case = "test_Talip2014_1600K"
-
-# # ref_points = np.array([[0],[0.344],[0.818],[3.79889],[4.123]])
-# # ref_case = "test_Talip2014_1800K"
-
-
-
-# # ref_points = np.array([[0], [1], [2], [3],[4],[5],[5.67]])
-# # ref_case = "test_Talip2014_1320K"
-
-
-# time_points = ref_points
-
-# number_of_interval = len(time_points) - 1
-# time_new = np.empty((0))
-# temperature_new = np.empty((0))
-# RR_interp = np.empty((0))
-# FR_interp = np.empty((0))
-# length = np.zeros((number_of_interval+1))
-# length[0] = 0
-# for i in range(1,number_of_interval+1):
-# 	Talip1320 = optimization()
-# 	Talip1320.setCase(ref_case)
-	
-# 	Talip1320.setStartEndTime(time_points[i-1][0],time_points[i][0])
-
-# 	Talip1320.setInitialConditions()
-# 	Talip1320.setScalingFactors("helium diffusivity pre exponential", "helium diffusivity activation energy")
-
-# 	setInputOutput = inputOutput()
-
-# 	Talip1320.optimization(setInputOutput)
-# 	length[i] = len(Talip1320.FR)
-
-# 	time_new = np.hstack((time_new, Talip1320.time))
-# 	temperature_new = np.hstack((temperature_new, Talip1320.temperature))
-# 	RR_interp = np.hstack((RR_interp, Talip1320.RR))
-# 	FR_interp = np.hstack((FR_interp, Talip1320.FR))
-
-# # print(time_new)
-# # print(temperature_new)
-
-# for i in range(1,len(length)):
-# 	length[i] = length[i-1] + length[i]
-
-# os.chdir(ref_case)
-
-# cloumnsFR  = np.genfromtxt("Talip2014_release_data.txt",dtype = 'float',delimiter='\t')
-# cloumnsRR = np.genfromtxt("Talip2014_rrate_data.txt",dtype = 'float',delimiter='\t')
-# variable_selected = np.array(["Time (h)","Temperature (K)","He fractional release (/)", "He release rate (at/m3 s)"])
-# coloumnsOutput_nominal = getSelectedVariablesValueFromOutput(variable_selected,"output.txt")
-
-# time_exp  = cloumnsFR[:,0]
-# FR_exp = cloumnsFR[:,1]
-# temperature_exp = cloumnsRR[:,0]
-# RR_exp = cloumnsRR[:,1]
-
-# time_sciantix = coloumnsOutput_nominal[:,0]
-# temperature_sciantix = coloumnsOutput_nominal[:,1]
-# FR_nominal = coloumnsOutput_nominal[:,2]
-# RR_nominal = coloumnsOutput_nominal[:,3]
-
-
-
-
-
-# fig, ax = plt.subplots(1,2)
-# plt.subplots_adjust(left=0.1,
-#                     bottom=0.1,
-#                     right=0.9,
-#                     top=0.9,
-#                     wspace=0.34,
-#                     hspace=0.4)
-
-# ax[0].scatter(time_exp, FR_exp, marker = '.', c = '#B3B3B3', label='Data from Talip et al. (2014)')
-# ax[0].plot(time_sciantix, FR_nominal, 'g', label='SCIANTIX 2.0 - Nominal')
-# # ax[0].plot(data_global[:,0], data_global[:,2], label = "Offline optimization" )
-# # ax[0].scatter(time_new[0:length0], FR_new[0:length0], label = 'Online optimization')
-
-# for i in range(1,number_of_interval+1):
-# 	ax[0].scatter(time_new[int(length[i-1]):int(length[i])], FR_interp[int(length[i-1]):int(length[i])], label = None)
-# # ax[0].scatter(time_new[length0:int(length[0])], FR_new[length0:int(length[0])], marker = 'x',label = f'optimized_0.567__1.134')
-
-
-# # ax[0].scatter(time_new, FR_interpolated, marker = 'x',color = 'blue',label = 'interpolated')
-# axT = ax[0].twinx()
-# axT.set_ylabel('Temperature (K)')
-# axT.plot(time_sciantix, temperature_sciantix, 'r', linewidth=1, label="Temperature")
-# for i in range(1,number_of_interval+1):
-# 	axT.plot(time_new[int(length[i-1]):int(length[i])], temperature_new[int(length[i-1]):int(length[i])], label =None)
-
-# ax[0].set_xlabel('Time (h)')
-# ax[0].set_ylabel('Helium fractional release (/)')
-# h1, l1 = ax[0].get_legend_handles_labels()
-# h2, l2 = axT.get_legend_handles_labels()
-# # ax[0].legend(h1+h2, l1+l2)
-# ax[0].legend(loc = 'upper left')
-
-# """ Plot: Helium release rate """
-# ax[1].scatter(temperature_exp, RR_exp, marker = '.', c = '#B3B3B3', label='Data from Talip et al. (2014)')
-# ax[1].plot(temperature_sciantix, RR_nominal, 'g', label='SCIANTIX 2.0 - Nominal')
-# # ax[1].plot(data_global[:,1], data_global[:,3], label = "Offline optimization")
-# # ax[1].scatter(temperature_new[0:length0], RR_new[0:length0],label = 'Online optimization')
-# for i in range(1,number_of_interval+1):
-#     ax[1].scatter(temperature_new[int(length[i-1]):int(length[i])], RR_interp[int(length[i-1]):int(length[i])], label = None)
-
-# # ax.set_title(file + ' - Release rate')
-# ax[1].set_xlabel('Temperature (K)')
-# ax[1].set_ylabel('Helium release rate (at m${}^{-3}$ s${}^{-1}$)')
-# ax[1].legend()
-
-# # plt.savefig(file + '.png')
-# plt.show()
-
-
-
-
-
-
-
-
-
-#######################
 # start = 0
 # end = 5.67
 # num_steps = 30
 # ref_points = np.linspace(start, end, num_steps).reshape(-1, 1).round(2)
 
-ref_points = np.array([[0], [0.6], [1.5], [4],[4.5],[5.67]])
+# 0	673	0	0
+# 0.37	935.512	0	0
+# 0.45	1077.648	0	0
+# 0.55	1255.319	0	0
+# 0.65	1432.99	0	0
+# 0.744	1600	0	0
+# 1.5	1600	0	0
+# 2.5	1600	0	0
+# 3.65	1600	0	0
+# 3.867	874.16	0	0
+
+ref_points = np.array([[0], [0.37], [0.45], [0.55], [0.65], [0.744], [1.5], [2.5], [3.65],[3.867]])
 ref_case = "test_Talip2014_1600K"
 time_points = ref_points
 number_of_interval = len(time_points) - 1
@@ -952,8 +838,9 @@ with open(f"optimization_online.txt", 'w') as file:
 		file.write(line + "\n")
 
 # OFFLINE optimization
+######################
 
-ref_points = np.array([[0],[5.67]])
+ref_points = np.array([[0],[3.867]])
 # time_points = ref_points
 number_of_interval = len(time_points) - 1
 

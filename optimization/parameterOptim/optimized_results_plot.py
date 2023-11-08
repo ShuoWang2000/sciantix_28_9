@@ -27,7 +27,7 @@ def getSelectedVariablesValueFromOutput(variable_selected, source_file):
     
     return variable_selected_value
 
-os.chdir("test_Talip2014_1320K")
+os.chdir("test_Talip2014_1600K")
 current_directory = os.getcwd()
 
 
@@ -55,8 +55,8 @@ time_end = np.array(time_end)
 
 time_end_previous = np.max(time_end)
 time_end_first = np.min(time_end)
-folder_path_global_time_end_previous = os.path.join(current_directory, f"Optimization_0_{time_end_previous}")
-folder_path_global_time_end_first = os.path.join(current_directory, f"Optimization_0_{time_end_first}")
+folder_path_global_time_end_previous = os.path.join(current_directory, f"Optimization_0_{time_end_previous}_")
+folder_path_global_time_end_first = os.path.join(current_directory, f"Optimization_0_{time_end_first}_")
 
 variable_selected = np.array(["Time (h)","Temperature (K)","He fractional release (/)", "He release rate (at/m3 s)"])
 
@@ -68,11 +68,9 @@ os.chdir(folder_path_global_time_end_first)
 data0 = getSelectedVariablesValueFromOutput(np.array(["Time (h)","Temperature (K)","He fractional release (/)", "He release rate (at/m3 s)"]),"output.txt")
 length0 = len(data0)
 
+# ONLINE
+# ######
 
-
-#############
-# the online one
-#############
 os.chdir(current_directory)
 
 keyword2 = "Optimization_"
@@ -107,7 +105,7 @@ length = np.zeros(len(time_start2))
 time = []
 
 for i in range(len(time_start2)):
-    os.chdir(f"Optimization_{time_start2[i]}__{time_end2[i]}")
+    os.chdir(f"Optimization_{time_start2[i]}__{time_end2[i]}_")
     data_output = getSelectedVariablesValueFromOutput(variable_selected, "output.txt")
     length[i] = len(data_output)
     # data_output[:,0] = data_output[:,0] + time_start2[i]
@@ -189,6 +187,8 @@ for i in range(0,len(time_start2)):
 ax[1].set_xlabel('Temperature (K)')
 ax[1].set_ylabel('Helium release rate (at m${}^{-3}$ s${}^{-1}$)')
 ax[1].legend()
+
+plt.title("sf: ")
 
 # plt.savefig(file + '.png')
 plt.show()
