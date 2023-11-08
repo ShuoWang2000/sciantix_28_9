@@ -110,7 +110,7 @@ class optimization():
 		self.time_exp  = cloumnsFR[:,0]
 		self.FR_exp = cloumnsFR[:,1]
 		self.temperature_exp = cloumnsRR[:,0]
-		self.RR_exp = cloumnsRR[:,1]
+		self.RR_exp = moving_average(cloumnsRR[:,1],5)
 		
 		FR_smoothed = moving_average(self.FR_exp,100)
 		for i in range(len(FR_smoothed)):
@@ -322,7 +322,6 @@ class optimization():
 				if index_max_time_exp == 0:
 					pass
 				else:
-					
 					for i in range(1,index_max_time_exp + 1):
 
 						if time_sciantix[i] == time_sciantix[i-1]:
@@ -631,11 +630,8 @@ def interpolate_1D(source_data_x, source_data_y, inserted_x):
 	up_bound = max(source_data_x)
 	low_bound = min(source_data_x)
 	if inserted_x > up_bound or inserted_x < low_bound:
-		print("interpolated_1D: inserted_x is out of the source_data_x range")
+		raise ValueError("interpolated_1D: inserted_x is out of the source_data_x range")
 		
-
-
-
 	difference = source_data_x - inserted_x
 	index_min_difference = np.argmin(abs(difference))
 	if difference[index_min_difference] == 0:
@@ -667,17 +663,21 @@ def interpolate_1D(source_data_x, source_data_y, inserted_x):
 def interpolate_2D(source_data_x, source_data_y, inserted_x, inserted_y):
 
 	differences1 = np.array([abs((x - inserted_x)/inserted_x) for x in source_data_x])
-	index_x = np.where(differences1<0.03)[0]
+	index_x = np.where(differences1<0.02)[0]
 	source_data_y_x = source_data_y[index_x]
-	if inserted_y == 0:
-		value_interpolated = np.average(source_data_y_x)
-	else:    
-		differences2 = np.array([abs((y - inserted_y)/inserted_y) for y in source_data_y_x])
-		index_y = np.where(differences2<0.02)[0]
-		if len(index_y) == 0:
-			index_y = np.argmin(differences2)
-		index = index_x[index_y]
-		value_interpolated = np.average(source_data_y[index])
+	if len(index_x) != 0:
+		if inserted_y == 0:
+			value_interpolated = np.average(source_data_y_x)
+		else:    
+			differences2 = np.array([abs((y - inserted_y)/inserted_y) for y in source_data_y_x])
+			index_y = np.where(differences2<0.02)[0]
+			if len(index_y) == 0:
+				index_y = np.argmin(differences2)
+			index = index_x[index_y]
+			value_interpolated = np.average(source_data_y[index])
+	else:
+		value_interpolated = source_data_y[np.argmin(differences1)]
+
 
 	return value_interpolated
 	
@@ -781,7 +781,8 @@ def do_plot(Talip1320):
 # ref_case = "test_Talip2014_1320K"
 
 # ref_points = np.array([[0], [0.425], [0.6112], [3.559],[4.269],[4.5],[4.56], [4.716]])
-# ref_case = "test_Talip2014_1400K_b"
+ref_points = np.array([[0], [0.3], [0.8], [1.0],[2.0],[3],[4],[4.5],[4.716]])
+ref_case = "test_Talip2014_1400K_b"
 
 # ref_points = np.array([[0],[1.388],[2.466],[2.746],[2.798]])
 # ref_case = "test_Talip2014_1400K_c"
@@ -794,9 +795,8 @@ def do_plot(Talip1320):
 
 
 
-ref_points = np.array([[0], [1], [2], [3],[4],[5],[5.67]])
-ref_case = "test_Talip2014_1320K"
-
+# ref_points = np.array([[0], [1], [2], [3],[4],[5],[5.67]])
+# ref_case = "test_Talip2014_1320K"
 
 
 time_points = ref_points
