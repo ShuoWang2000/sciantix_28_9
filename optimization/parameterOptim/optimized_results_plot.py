@@ -27,7 +27,6 @@ def getSelectedVariablesValueFromOutput(variable_selected, source_file):
     
     return variable_selected_value
 
-
 def readSFfromInputScalingFactors(end_time, keyword):
     """
     this function read the sf from the optimization file from time 0
@@ -59,15 +58,13 @@ def readSFfromInputScalingFactors(end_time, keyword):
     else:
         value = "No data"
     return value
-            
 
 os.chdir("test_Talip2014_1600K")
 current_directory = os.getcwd()
 
-
-########
-# the global one
-########
+#########
+# OFFLINE
+#########
 
 keyword = "Optimization_0_"
 folder1_collection = []
@@ -97,11 +94,11 @@ variable_selected = np.array(["Time (h)","Temperature (K)","He fractional releas
 os.chdir(folder_path_global_time_end_previous)
 data_global = getSelectedVariablesValueFromOutput(np.array(["Time (h)","Temperature (K)","He fractional release (/)", "He release rate (at/m3 s)"]),"output.txt")
 
-
 os.chdir(folder_path_global_time_end_first)
 data0 = getSelectedVariablesValueFromOutput(np.array(["Time (h)","Temperature (K)","He fractional release (/)", "He release rate (at/m3 s)"]),"output.txt")
 length0 = len(data0)
 
+########
 # ONLINE
 # ######
 
@@ -169,11 +166,6 @@ time_sciantix = coloumnsOutput_nominal[:,0]
 temperature_sciantix = coloumnsOutput_nominal[:,1]
 FR_nominal = coloumnsOutput_nominal[:,2]
 RR_nominal = coloumnsOutput_nominal[:,3]
-
-
-
-
-time_new = data[:,0]
 temperature_new = data[:,1]
 FR_new = data[:,2]
 RR_new = data[:,3]
@@ -195,7 +187,6 @@ for i in range(0,len(time_start2)):
     ax[0].scatter(time_new[int(length_all[i]):int(length_all[i+1])], FR_new[int(length_all[i]):int(length_all[i+1])], label = None)
 
 # ax[0].scatter(time_new[length0:int(length[0])], FR_new[length0:int(length[0])], marker = 'x',label = f'optimized_0.567__1.134')
-
 
 # ax[0].scatter(time_new, FR_interpolated, marker = 'x',color = 'blue',label = 'interpolated')
 axT = ax[0].twinx()
@@ -221,7 +212,6 @@ for i in range(0,len(time_start2)):
 ax[1].set_xlabel('Temperature (K)')
 ax[1].set_ylabel('Helium release rate (at m${}^{-3}$ s${}^{-1}$)')
 ax[1].legend()
-
 
 sf_D0 = readSFfromInputScalingFactors(time_end1[-1], "helium diffusivity pre exponential")
 sf_De = readSFfromInputScalingFactors(time_end1[-1], "helium diffusivity activation energy")
