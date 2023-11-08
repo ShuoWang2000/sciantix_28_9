@@ -17,28 +17,7 @@ class inputOutput():
 		temperature_history_original = history_original[:,1]
 		temperature_start = interpolate_1D(time_history_original, temperature_history_original, time_start)
 		temperature_end = interpolate_1D(time_history_original, temperature_history_original, time_end)
-
-		# for i in range(len(time_history_original)):
-		# 	if time_start == time_history_original[i]:
-		# 		index_start = np.where(time_history_original == time_start)[0][0]
-		# 		break
-		# 	else:
-		# 		index_start = np.where(time_history_original < time_start)[0][-1]
-		
-		# # print(index_start)
-		# # print(time_end, time_history_original[6])
-		# print(len(time_history_original))
-		# for j in range(len(time_history_original)):
-		# 	print(j)
-			
-		# 	if time_end == time_history_original[j]:
-		# 		index_end = np.where(time_history_original == time_end)[0][0]
-		# 		print(index_end)
-		# 		break
-		# 	else:
-		# 		index_end = np.where(time_history_original > time_end)[0][0]
-			
-		# print(index_start, index_end)
+		# print(temperature_end)
 		index_start = np.where(time_history_original <= time_start)[0][-1]
 		index_end = np.where(time_history_original >= time_end)[0][0]
 		if index_start != index_end:
@@ -201,7 +180,7 @@ class optimization():
 			
 			if find1 == True:
 				os.chdir(folder_path1)
-				print(folder_path1)
+				# print(folder_path1)
 				self.folder_path_previous_optimization = folder_path1
 
 			else:
@@ -467,7 +446,7 @@ class optimization():
 				else:
 					if state == "increase" and FR_interpolated[i-1]<1:
 						index_state_end = findClosestIndex_1D(self.temperature_exp, temperature_state_end)
-						RR_interpolated[i] = interpolate_1D(self.temperature_exp[:index_state_end], self.RR_exp[:index_state_end], temperature_sciantix[i])
+						RR_interpolated[i] = interpolate_1D(self.temperature_exp[:index_state_end+1], self.RR_exp[:index_state_end+1], temperature_sciantix[i])
 						if RR_interpolated[i] <0:
 							RR_interpolated[i] = 0
 						FR_interpolated[i] = FR_interpolated[i-1] + RR_interpolated[i] * (time_sciantix[i]-time_sciantix[i-1]) * 3600/Helium_total
@@ -644,53 +623,6 @@ def findClosedIndex_2D(source_data1, source_data2, targetElement1, targetElement
 	index = np.argmin(differences)
 	return index
 
-# def interpolate_1D(source_data_x, source_data_y, inserted_x):
-# 	differences = np.array([(x - inserted_x) for x in source_data_x])
-
-# 	index = np.argmin(abs(differences))
-
-# 	if differences[index] == 0 or index == len(source_data_x)-1 or index == 0:
-# 		value_interpolated = source_data_y[index]
-# 	elif index == len(source_data_x) -1:
-# 		find = False
-# 		for i in range(len(source_data_x)):
-# 			if np.sign(differences[index - i]) != np.sign(differences[index]):
-# 				value_interpolated = source_data_y[index - i] + (source_data_y[index] -source_data_y[index-i])/(source_data_x[index]-source_data_x[index-i]) * (inserted_x-source_data_x[index-i])
-# 				find = True
-# 				break
-# 		if find == False:
-# 			value_interpolated == source_data_y[index]
-	
-# 	elif index == 0:
-# 		find = False
-# 		for i in range(len(source_data_x)):
-# 			if np.sign(differences[index + i]) != np.sign(differences[index]):
-# 				value_interpolated = source_data_y[index] + (source_data_y[index+i] -source_data_y[index])/(source_data_x[index+i]-source_data_x[index]) * (inserted_x-source_data_x[index])
-# 				find = True
-# 				break
-# 		if find == False:
-# 			value_interpolated == source_data_y[index]
-# 	else:
-# 		for i in range(min(index, len(source_data_x)-index-1)):
-# 			if np.sign(differences[index - i]) != np.sign(differences[index+i]):
-# 				index_low = index-i
-# 				index_up = index+i
-# 				up_y = source_data_y[index_up]
-# 				low_y = source_data_y[index_low]
-# 				up_x = source_data_x[index_up]
-# 				low_x = source_data_x[index_low]
-# 				if up_x == low_x:
-# 					value_interpolated = source_data_y[index]
-# 				else:
-# 					slop = (up_y - low_y)/(up_x-low_x)
-# 					value_interpolated = low_y + slop * (inserted_x - low_x)
-# 				break
-# 			else:
-# 				value_interpolated = source_data_y[index]
-# 				break
-
-# 	return value_interpolated
-
 def interpolate_1D(source_data_x, source_data_y, inserted_x):
 	"""
 	inserted_x has to be within the range of source_data_x
@@ -699,54 +631,35 @@ def interpolate_1D(source_data_x, source_data_y, inserted_x):
 	up_bound = max(source_data_x)
 	low_bound = min(source_data_x)
 	if inserted_x > up_bound or inserted_x < low_bound:
-		raise ValueError("interpolated_1D: inserted_x is out of the source_data_x range")
-	
+		print("interpolated_1D: inserted_x is out of the source_data_x range")
+		
+
+
+
 	difference = source_data_x - inserted_x
 	index_min_difference = np.argmin(abs(difference))
 	if difference[index_min_difference] == 0:
 		interpolated_value = source_data_y[index_min_difference]
-	# elif source_data_x[index_min_difference] == max(source_data_x):
-	# 	low_x = source_data_x[index_min_difference-1]
-	# 	up_x = source_data_x[index_min_difference]
-	# 	up_y = source_data_y[index_min_difference]
-	# 	low_x = source_data_y[index_min_difference - 1]
-	# 	slop = (up_y -low_y)/(up_x-low_x)
-	# 	interpolated_value  = low_x + slop * (inserted_x - low_x)
-	# elif inserted_x == min(source_data_x):
-	# 	low_x = source_data_x[index_min_difference]
-	# 	up_x = source_data_x[index_min_difference+1]
-	# 	up_y = source_data_y[index_min_difference+1]
-	# 	low_x = source_data_y[index_min_difference]
-	# 	slop = (up_y -low_y)/(up_x-low_x)
-	# 	interpolated_value  = low_x + slop * (inserted_x - low_x)
-
+	
+	
 	else:
 		if inserted_x > source_data_x[index_min_difference]:
-			for i in range(index_min_difference):
-				for j in range(1,len(source_data_x)-index_min_difference - 1):
-					if np.sign(difference[index_min_difference - i]) != np.sign(difference[index_min_difference + j]):
-						low_x = source_data_x[index_min_difference-i]
-						up_x = source_data_x[index_min_difference + j]
-						low_y = source_data_y[index_min_difference-i]
-						up_y = source_data_y[index_min_difference+j]
-						slop = (up_y - low_y)/(up_x-low_x)
-						interpolated_value = low_y + slop*(inserted_x - low_x)
-						break
-			interpolated_value = source_data_y[index_min_difference]
+			index_low = index_min_difference
+			index_up_collection = np.where(source_data_x > inserted_x)[0]
+			index_up = index_up_collection[np.argmin(abs(index_up_collection - index_min_difference))]
 
 		else:# inserted_x < source_data_x[index_min_difference]:
-			for i in range(len(source_data_x) - index_min_difference - 1):
-				for j in range(1,index_min_difference):
-					if np.sign(difference[index_min_difference + i]) != np.sign(difference[index_min_difference - j]):
-						low_x = source_data_x[index_min_difference - j]
-						up_x = source_data_x[index_min_difference + i]
-						low_y = source_data_y[index_min_difference -j]
-						up_y = source_data_y[index_min_difference + i]
-						slop = (up_y - low_y)/(up_x-low_x)
-						interpolated_value = low_y + slop*(inserted_x - low_x)
-						break
-			interpolated_value = source_data_y[index_min_difference]
 
+			index_up = index_min_difference
+			index_low_collection = np.where(source_data_x < inserted_x)[0]
+			index_low = index_low_collection[np.argmin(abs(index_low_collection - index_min_difference))]
+			
+		low_x = source_data_x[index_low]
+		low_y = source_data_y[index_low]
+		up_x = source_data_x[index_up]
+		up_y = source_data_y[index_up]
+		slop = (up_y - low_y)/(up_x-low_x)
+		interpolated_value = low_y + slop*(inserted_x - low_x)
 	return interpolated_value
 
 
@@ -864,8 +777,8 @@ def do_plot(Talip1320):
 
 
 #######################
-ref_points = np.array([[0], [0.434], [0.694], [3.686],[4.494],[5.583],[5.67]])
-ref_case = "test_Talip2014_1320K"
+# ref_points = np.array([[0], [0.434], [0.694], [3.686],[4.494],[5.583],[5.67]])
+# ref_case = "test_Talip2014_1320K"
 
 # ref_points = np.array([[0], [0.425], [0.6112], [3.559],[4.269],[4.5],[4.56], [4.716]])
 # ref_case = "test_Talip2014_1400K_b"
@@ -881,7 +794,8 @@ ref_case = "test_Talip2014_1320K"
 
 
 
-
+ref_points = np.array([[0], [1], [2], [3],[4],[5],[5.67]])
+ref_case = "test_Talip2014_1320K"
 
 
 
