@@ -83,7 +83,7 @@ class inputOutput():
 				if(f'{key}' == 'helium diffusivity pre exponential'):
 					file.write(f'{np.exp(value)}\n')
 					file.write(f'# scaling factor - {key}\n')
-					print(np.exp(value))
+					# print(np.exp(value))
 				else:
 					file.write(f'{value}\n')
 					file.write(f'# scaling factor - {key}\n')		
@@ -528,7 +528,7 @@ class optimization():
 		# - 'trust-exact' :ref:`(see here) <optimize.minimize-trustexact>`
 		# - 'trust-krylov' :ref:`(see here) <optimize.minimize-trustkrylov>`
 
-		# results = optimize.minimize(costFunction, self.sf_selected_initial_value, method = 'COBYLA', bounds=self.bounds, tol=0.001, options={'disp': True})
+		results = optimize.minimize(costFunction, self.sf_selected_initial_value, method = 'COBYLA', bounds=self.bounds, tol=0.001, options={'disp': True})
 		# results = optimize.minimize(costFunction, self.sf_selected_initial_value, method = 'Nelder-Mead', bounds=self.bounds, tol=0.001, options={'xatol': 1e-8, 'disp': True})
 		# results = optimize.minimize(costFunction, self.sf_selected_initial_value)
 		
@@ -787,16 +787,6 @@ def do_plot(Talip1320):
 # num_steps = 30
 # ref_points = np.linspace(start, end, num_steps).reshape(-1, 1).round(2)
 
-# 0	673	0	0
-# 0.37	935.512	0	0
-# 0.45	1077.648	0	0
-# 0.55	1255.319	0	0
-# 0.65	1432.99	0	0
-# 0.744	1600	0	0
-# 1.5	1600	0	0
-# 2.5	1600	0	0
-# 3.65	1600	0	0
-# 3.867	874.16	0	0
 
 ref_points = np.array([[0], [0.37], [0.45], [0.55], [0.65], [0.744], [1.5], [2.5], [3.65],[3.867]])
 ref_case = "test_Talip2014_1600K"
@@ -847,8 +837,6 @@ number_of_interval = len(time_points) - 1
 sf_optimized = np.ones((number_of_interval+1,2))
 error_optimized = np.zeros((number_of_interval+1,1))
 results_data = np.empty((number_of_interval+2,4),dtype = object)
-final_data = np.empty((0,4))
-final_data_interpolated = np.empty((0,4))
 
 for i in range(1,number_of_interval+1):
 
