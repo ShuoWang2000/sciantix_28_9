@@ -27,44 +27,13 @@ def getSelectedVariablesValueFromOutput(variable_selected, source_file):
     
     return variable_selected_value
 
-def readSFfromInputScalingFactors(end_time, keyword):
-    """
-    this function read the sf from the optimization file from time 0
-    keyword: the scaling factors name, for example: "Helium diffuscivity pre exponential"
-    """
-    find_value =False
-    current_directory = os.getcwd()
-    parent_directory = os.path.dirname(current_directory)
-    for folder_name in os.listdir(parent_directory):
-        if folder_name == f"Optimization_0__{end_time}_":
-            os.chdir(f"Optimization_0__{end_time}_")
-            with open("input_scaling_factors.txt", 'r') as file:
-                line_number = 0
-                previous_line = None
-                for line in file:
-                    line_number += 1
-                    if keyword in line:
-                        break
-                    previous_line = line.strip() 
-            if previous_line is not None:
-                value = float(previous_line)
-                find_value = True
-            break
-        else:
-            pass
-    
-    if find_value == True:
-        pass
-    else:
-        value = "No data"
-    return value
-
 os.chdir("test_Talip2014_1600K")
 current_directory = os.getcwd()
 
-#########
-# OFFLINE
-#########
+
+########
+# the global one
+########
 
 keyword = "Optimization_0_"
 folder1_collection = []
@@ -76,16 +45,16 @@ for folder_name in os.listdir(current_directory):
         find = True
         folder1_collection.append(folder_name)
 
-time_end1 = []
+time_end = []
 for file_name in folder1_collection:
     match = re.search(pattern, file_name)
     if match:
         time = np.round(float(match.group(1)),3)
-        time_end1.append(time)
-time_end1 = np.array(time_end1)
+        time_end.append(time)
+time_end = np.array(time_end)
 
-time_end_previous = np.max(time_end1)
-time_end_first = np.min(time_end1)
+time_end_previous = np.max(time_end)
+time_end_first = np.min(time_end)
 folder_path_global_time_end_previous = os.path.join(current_directory, f"Optimization_0_{time_end_previous}_")
 folder_path_global_time_end_first = os.path.join(current_directory, f"Optimization_0_{time_end_first}_")
 
@@ -94,11 +63,11 @@ variable_selected = np.array(["Time (h)","Temperature (K)","He fractional releas
 os.chdir(folder_path_global_time_end_previous)
 data_global = getSelectedVariablesValueFromOutput(np.array(["Time (h)","Temperature (K)","He fractional release (/)", "He release rate (at/m3 s)"]),"output.txt")
 
+
 os.chdir(folder_path_global_time_end_first)
 data0 = getSelectedVariablesValueFromOutput(np.array(["Time (h)","Temperature (K)","He fractional release (/)", "He release rate (at/m3 s)"]),"output.txt")
 length0 = len(data0)
 
-########
 # ONLINE
 # ######
 
@@ -166,6 +135,11 @@ time_sciantix = coloumnsOutput_nominal[:,0]
 temperature_sciantix = coloumnsOutput_nominal[:,1]
 FR_nominal = coloumnsOutput_nominal[:,2]
 RR_nominal = coloumnsOutput_nominal[:,3]
+
+
+
+
+time_new = data[:,0]
 temperature_new = data[:,1]
 FR_new = data[:,2]
 RR_new = data[:,3]
@@ -213,9 +187,7 @@ ax[1].set_xlabel('Temperature (K)')
 ax[1].set_ylabel('Helium release rate (at m${}^{-3}$ s${}^{-1}$)')
 ax[1].legend()
 
-sf_D0 = readSFfromInputScalingFactors(time_end1[-1], "helium diffusivity pre exponential")
-sf_De = readSFfromInputScalingFactors(time_end1[-1], "helium diffusivity activation energy")
-plt.title(f"sf_D0:{sf_D0}; sf_De: {sf_De} ")
+plt.title("sf: ")
 
 # plt.savefig(file + '.png')
 plt.show()
