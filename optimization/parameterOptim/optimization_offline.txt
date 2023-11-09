@@ -1,3 +1,3 @@
-time	helium diffusivity pre exponential	helium diffusivity activation energy	error
-0	1.0	1.0	0
-3.867	0.9393991722906175	1.0009765351403257	0.1352048316315822
+time	resolution rate	trapping rate	helium diffusivity pre exponential	helium diffusivity activation energy	henry constant pre exponential	henry constant activation energy	error
+0	1.0	1.0	1.0	1.0	1.0	1.0	0
+3.867	2.3378910528023504	1.0212475605156015	0.9411194350334786	1.021247562204979	2.01223459019312	0.8750301505910812	0.1343488671012732
