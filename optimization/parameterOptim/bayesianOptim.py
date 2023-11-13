@@ -523,19 +523,68 @@ class optimization():
 			# # error_slop = -max(abs(dFR_dt - dFR_dt_sciantix))
 			# print(dFR_dt)
 			# print(dFR_dt_sciantix)
-
+			error_derivative = np.zeros_like(dFR_dt_sciantix)
+			dFR_dt_last = 0
 			for j in range(len(dFR_dt_sciantix)):
-				if np.isnan(dFR_dt_sciantix[::-1])[j] == False:
-					dFR_dt_sciantix_last = dFR_dt_sciantix[::-1][j]
+				if np.isnan(dFR_dt_sciantix)[j] == False and np.isnan(dFR_dt)[j] ==  False:
+					error_derivative[j] = dFR_dt[j] - dFR_dt_sciantix[j]
+				else:
+					error_derivative[j] = 0
 					break
-			for j in range(len(dFR_dt)):
-				if np.isnan(dFR_dt[::-1])[j] == False:
-					dFR_dt_last = dFR_dt[::-1][j]
+			for i in range(len(dFR_dt)):
+				if error_derivative[::-1][i] > 10^-9:
+					error_derivative_last = error_derivative[i]
+					dFR_dt_last = dFR_dt[i]
 					break
+
+			# print(dFR_dt)
+			# print(dFR_dt_sciantix)
+			# if self.time_start == 0:
+			# 	if max(FR_interpolated) != 0 and max(abs(dFR_dt)) !=0:
+			# 		error = -sum(abs(FR_interpolated - FR_sciantix))/max(FR_interpolated)-sum(abs(error_derivative))/max(abs(dFR_dt))
+			# 	elif max(FR_interpolated) == 0 and max(abs(dFR_dt)) !=0:
+			# 		error = -1*len(FR_interpolated)-sum(abs(error_derivative))/max(abs(dFR_dt))
+			# 	elif max(FR_interpolated) != 0 and max(abs(dFR_dt)) ==0:
+			# 		error = -sum(abs(FR_interpolated - FR_sciantix))/max(FR_interpolated)-1 * len(dFR_dt)
+			# 	else:
+			# 		error = - 2 * len(FR_interpolated)
+
 			
 
-			error = -max(abs(FR_interpolated - FR_sciantix))-abs(dFR_dt_last-dFR_dt_sciantix_last)
+			# else:
+			# 	if FR_interpolated[-1] != 0 and dFR_dt_last != 0:
+			# 		error = -(abs(FR_interpolated[-1])-(FR_sciantix[-1]))/FR_interpolated[-1] - (abs(error_derivative_last))/dFR_dt_last
+			# 	elif FR_interpolated[-1] == 0 and dFR_dt_last !=0:
+			# 		error = -1 - (abs(error_derivative_last))/dFR_dt_last
+			# 	elif FR_interpolated[-1] != 0 and dFR_dt_last == 0:
+			# 		error = -(abs(FR_interpolated[-1])-(FR_sciantix[-1]))/FR_interpolated[-1] - 1
+			# 	else:
+			# 		error = -2
 
+
+			if max(FR_interpolated) != 0 and max(abs(dFR_dt)) !=0:
+				error = -sum(abs(FR_interpolated - FR_sciantix))/max(FR_interpolated) *max(abs(dFR_dt))/max(FR_interpolated) -sum(abs(error_derivative))/max(abs(dFR_dt))
+			elif max(FR_interpolated) == 0 and max(abs(dFR_dt)) !=0:
+				if max(FR_sciantix) != 0:
+
+					error = -1*len(FR_interpolated)*max(abs(dFR_dt))/max(FR_interpolated)-sum(abs(error_derivative))/max(abs(dFR_dt))
+				else:
+					error = -sum(abs(error_derivative))/max(abs(dFR_dt))
+			elif max(FR_interpolated) != 0 and max(abs(dFR_dt)) ==0:
+				if max(dFR_dt_sciantix) != 0:
+					error = -sum(abs(FR_interpolated - FR_sciantix))/max(FR_interpolated)*max(abs(dFR_dt))/max(FR_interpolated) - 1 * len(dFR_dt)
+				else:
+					error = -sum(abs(FR_interpolated - FR_sciantix))/max(FR_interpolated)*max(abs(dFR_dt))/max(FR_interpolated)
+			else: #max(FR_interpolated) == 0 and max(abs(dFR_dt)) ==0:
+				if max(FR_sciantix) != 0 and max(dFR_dt_sciantix) != 0:
+					error = - 2 * len(FR_interpolated)
+				elif max(FR_sciantix) == 0 and max(dFR_dt_sciantix) == 0:
+					error = 0
+				else:
+					error = -1 * len(FR_interpolated)
+			
+			
+			
 			return error
 		
 		
@@ -572,7 +621,7 @@ class optimization():
 
 		acq_function = UtilityFunction(kind = 'ucb')
 		optimizer.maximize(
-			init_points=10,
+			init_points=20,
 			n_iter=100,
 			acquisition_function = acq_function
 		)
