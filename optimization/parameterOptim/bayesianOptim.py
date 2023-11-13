@@ -76,10 +76,12 @@ class inputOutput():
 		with open("input_initial_conditions.txt", 'w') as file:
 			file.writelines(lines)
 
-	def writeInputScalingFactors(self,scaling_factors,sf_selected,sf_selected_value):
+	def writeInputScalingFactors(self,scaling_factors,sf_selected,kwargs):
 		# assign new sf value and write the file, and run sciantix.x
+		# for i in range(len(sf_selected)):
+			# scaling_factors[sf_selected[i]] = sf_selected_value[i]
 		for i in range(len(sf_selected)):
-			scaling_factors[sf_selected[i]] = sf_selected_value[i]
+			scaling_factors[sf_selected[i]] = kwargs[sf_selected[i]]
 
 		with open("input_scaling_factors.txt",'w') as file:
 			for key, value in scaling_factors.items():
@@ -91,7 +93,7 @@ class inputOutput():
 					file.write(f'{value}\n')
 					file.write(f'# scaling factor - {key}\n')		
 		
-		self.sf_selected_value = sf_selected_value
+		# self.sf_selected_value = sf_selected_value
 
 		# sciantix simulation during optimization
 		os.system("./sciantix.x")
@@ -295,9 +297,9 @@ class optimization():
 		inputOutput.writeInputInitialConditions(self.ic_new, self.ic_grainRadius, self.ic_intraGrainBubbleRadius)
 
 		def costFunction(**kwargs):
-			sf_selected_value = np.fromiter(kwargs.values(), dtype=float)
-
-			inputOutput.writeInputScalingFactors(self.scaling_factors,self.sf_selected,sf_selected_value)
+			# sf_selected_value = np.fromiter(kwargs.values(), dtype=float)
+			
+			inputOutput.writeInputScalingFactors(self.scaling_factors,self.sf_selected,kwargs)
 			inputOutput.readOutput()
 			FR_interpolated = np.zeros_like(inputOutput.FR_sciantix)
 			RR_interpolated = np.zeros_like(inputOutput.RR_sciantix)
@@ -306,6 +308,7 @@ class optimization():
 			temperature_sciantix = inputOutput.temperature_sciantix
 
 			FR_sciantix = inputOutput.FR_sciantix
+			RR_sciantix = inputOutput.RR_sciantix
 			dFR_dt_sciantix = np.zeros_like(inputOutput.RR_sciantix)
 			if self.time_start == 0.0:
 				dFR_dt_sciantix[0] = 0
@@ -514,137 +517,42 @@ class optimization():
 					if i < len(data) -1 :
 						file.write("\n")
 
-			# print(f"Current value: {sf_selected_value}")
+
 
 			# error function
-			# error = max(abs(FR_interpolated - FR_sciantix))
+			# # error_slop = -max(abs(dFR_dt - dFR_dt_sciantix))
+			# print(dFR_dt)
+			# print(dFR_dt_sciantix)
 
-			error_related = np.zeros_like(FR_sciantix)
-			plateau_index = [int(item) for item in plateau_index]
-			error_now = np.zeros(len(FR_sciantix))
-			if self.time_start == 0:
-				for i in range(1,len(FR_sciantix)):
-					if i+20 < len(FR_interpolated) - 1:
-						predict_index = i+20
-					else:
-						predict_index = len(FR_interpolated) - 1
-
-					if i-20 > 0:
-						prior_index = i -20
-					else:
-						prior_index = 0
-
-					#integral error: (past)
-					if sum(FR_interpolated[prior_index:i]) != 0:
-						error_integral = sum(abs(FR_interpolated[prior_index:i]  - FR_sciantix[prior_index:i]))/sum(FR_interpolated[prior_index:i])
-					else:
-						error_integral = 1
-					# error now
-					if FR_interpolated[i] !=0:
-						error_now[i] = abs(FR_interpolated[i] - FR_sciantix[i])/FR_interpolated[i]
-					else:
-						if FR_sciantix[i] != 0:
-								error_now[i] = 1
-						else:
-							error_now[i] = 0
-					#differential error: (future)
-					if dFR_dt[i] >10e-10:
-						if FR_interpolated[predict_index] != 0:
-							error_future = abs(dFR_dt[i] - dFR_dt_sciantix[i])/dFR_dt[i] + abs((FR_interpolated[predict_index]-FR_sciantix[predict_index]))/FR_interpolated[predict_index]
-						else:
-							if FR_sciantix[i] != 0:
-									error_future = abs(dFR_dt[i] - dFR_dt_sciantix[i])/dFR_dt[i]+ 1
-							else:
-								error_future = abs(dFR_dt[i] - dFR_dt_sciantix[i])/dFR_dt[i]
-					else:
-						
-						if dFR_dt_sciantix[i] > 10e-10:
-							if FR_interpolated[predict_index] != 0:
-								error_future= 1 + abs((FR_interpolated[predict_index]-FR_sciantix[predict_index]))/FR_interpolated[predict_index]
-							else:
-								if FR_sciantix[i] != 0:
-									error_future = 2
-								else:
-									error_future = 1
-						else:
-							if FR_interpolated[predict_index] != 0:
-								error_future = abs((FR_interpolated[predict_index]-FR_sciantix[predict_index]))/FR_interpolated[predict_index]
-							else:
-								if FR_sciantix[i] != 0:
-									error_future = 1
-								else:
-									error_future = 0
-					
-
-					if FR_interpolated[i] != 0:
-						if abs((FR_interpolated[i] - FR_sciantix[i])/FR_interpolated[i]) < 0.05:
-							error_related[i] = error_integral + error_now[i] + error_future
-						else:
-							error_related[i] = 3*error_now[i]
-					else:
-						if FR_sciantix[i] != 0:
-							error_related[i] = 1
-						else:
-							error_related[i] = 0
-				error =  -np.sum(error_related)
-			else:
-				#error before
-				if sum(FR_interpolated) != 0:
-					error_integral = sum(abs(FR_interpolated  - FR_sciantix))/sum(FR_interpolated)
-				else:
-					error_integral = 1
-					error_related[-1] = error_integral
-				# error now
-				for i in range(len(FR_interpolated)):
-					if FR_interpolated[i] !=0:
-						error_now[i] = abs(FR_interpolated[i] - FR_sciantix[i])/FR_interpolated[i]
-					else:
-						if FR_sciantix[i] != 0:
-								error_now[i] = 1
-						else:
-							error_now[i] = 0
-					#differential error: (future)
-				if dFR_dt[-1] >10e-10:
-					if FR_interpolated[-1] != 0:
-						error_future = abs(dFR_dt[i] - dFR_dt_sciantix[-1])/dFR_dt[-1] + abs((FR_interpolated[-1]-FR_sciantix[-1]))/FR_interpolated[-1]
-					else:
-						if FR_sciantix[-1] != 0:
-								error_future = abs(dFR_dt[-1] - dFR_dt_sciantix[-1])/dFR_dt[-1]+ 1
-						else:
-							error_future = abs(dFR_dt[-1] - dFR_dt_sciantix[-1])/dFR_dt[-1]
-				else:
-					if FR_interpolated[-1] != 0:
-						if dFR_dt_sciantix[-1] > 10e-10:
-								error_future= 1 +  abs((FR_interpolated[-1]-FR_sciantix[-1]))/FR_interpolated[-1]
-						else:
-							error_future = abs((FR_interpolated[-1]-FR_sciantix[-1]))/FR_interpolated[-1]
-					else:
-						if FR_sciantix[-1] != 0:
-							error_future = 1
-						else:
-							error_future = 0 
-				
-				error = -(error_integral + 4*sum(error_now) + error_future)
-
+			for j in range(len(dFR_dt_sciantix)):
+				if np.isnan(dFR_dt_sciantix[::-1])[j] == False:
+					dFR_dt_sciantix_last = dFR_dt_sciantix[::-1][j]
+					break
+			for j in range(len(dFR_dt)):
+				if np.isnan(dFR_dt[::-1])[j] == False:
+					dFR_dt_last = dFR_dt[::-1][j]
+					break
 			
 
-			# print(f"Current error: {error}")
+			error = -max(abs(FR_interpolated - FR_sciantix))-abs(dFR_dt_last-dFR_dt_sciantix_last)
+
 			return error
 		
 		
-		
+		# pbounds = self.BO_bounds
 		# optimizer = BayesianOptimization(
 		# 	f = costFunction, 
-		# 	pbounds  = self.BO_bounds,
+		# 	pbounds  = pbounds,
 		# 	verbose = 1,
+		# 	allow_duplicate_points=True
 		# 	)
 
 		# acq_function = UtilityFunction(kind = 'ucb')
 
 
 		# optimizer.maximize(
-		# 	init_points=10,
-		# 	n_iter=20,
+		# 	init_points=20,
+		# 	n_iter=100,
 		# 	acquisition_function = acq_function
 		# )
 
@@ -652,40 +560,38 @@ class optimization():
 		#####
 		# domain reduction
 		#####
-		bounds_transformer = SequentialDomainReductionTransformer(minimum_window=0.1)
+		pbounds = self.BO_bounds
+		bounds_transformer = SequentialDomainReductionTransformer(minimum_window=0.01)
 		optimizer = BayesianOptimization(
 			f = costFunction, 
-			pbounds  = self.BO_bounds,
-			verbose = 1,
-			bounds_transformer = bounds_transformer
+			pbounds  = pbounds,
+			verbose = 2,
+			bounds_transformer = bounds_transformer,
+			allow_duplicate_points=True
 			)
 
 		acq_function = UtilityFunction(kind = 'ucb')
-
-
 		optimizer.maximize(
 			init_points=10,
 			n_iter=100,
 			acquisition_function = acq_function
 		)
 
+		for i, res in enumerate(optimizer.res):
+			print("Iteration {}: \n\t{}".format(i, res))
 
 		self.optimization_results = np.zeros(len(self.sf_selected)+1)
 		for i in range(len(self.sf_selected)):
 			self.scaling_factors[self.sf_selected[i]] = optimizer.max['params'][self.sf_selected[i]]
-			self.optimization_results[i] = np.exp(optimizer.max['params'][self.sf_selected[i]])
-			print(f"{self.sf_selected[i]}:{optimizer.max['params'][self.sf_selected[i]]}")
+			if self.sf_selected[i] == "helium diffusivity pre exponential":
+				self.optimization_results[i] = np.exp(optimizer.max['params'][self.sf_selected[i]])
+			else:
+				self.optimization_results[i] = optimizer.max['params'][self.sf_selected[i]]
+			print(f"{self.sf_selected[i]}:{self.optimization_results[i]}")
 		print(f"Final error:{optimizer.max['target']}")
 		self.optimization_results[-1] = optimizer.max['target']
 
 
-		# self.optimization_results = np.zeros(len(self.sf_selected)+1)
-		# for i in range(len(self.sf_selected)):
-		# 	self.scaling_factors[self.sf_selected[i]] = results.x[i]
-		# 	self.optimization_results[i] = np.exp(results.x[i])
-		# 	print(f"{self.sf_selected[i]}:{results.x[i]}")
-		# print(f"Final error:{results.fun}")
-		# self.optimization_results[-1] = results.fun
 		
 		with open("input_scaling_factors.txt",'w') as file:
 			for key, value in self.scaling_factors.items():
@@ -966,7 +872,7 @@ with open(f"optimization_online.txt", 'w') as file:
 # OFFLINE optimization
 ######################
 
-ref_points = np.array([[0],[3.867]])
+# ref_points = np.array([[0],[3.867]])
 # time_points = ref_points
 number_of_interval = len(time_points) - 1
 
