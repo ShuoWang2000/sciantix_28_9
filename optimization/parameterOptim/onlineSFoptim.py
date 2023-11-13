@@ -80,13 +80,8 @@ class inputOutput():
 
 		with open("input_scaling_factors.txt",'w') as file:
 			for key, value in scaling_factors.items():
-				if(f'{key}' == 'helium diffusivity pre exponential'):
-					file.write(f'{np.exp(value)}\n')
-					file.write(f'# scaling factor - {key}\n')
-					# print(np.exp(value))
-				else:
-					file.write(f'{value}\n')
-					file.write(f'# scaling factor - {key}\n')		
+				file.write(f'{value}\n')
+				file.write(f'# scaling factor - {key}\n')		
 		
 		self.sf_selected_value = sf_selected_value
 
@@ -239,8 +234,8 @@ class optimization():
 				sf_name.append(lines[i + 1].strip()[len("# scaling factor - "):])
 				self.scaling_factors[sf_name[-1]] = value
 				i += 2
-
-			self.scaling_factors['helium diffusivity pre exponential'] = 0.0
+			
+			# self.scaling_factors['helium diffusivity pre exponential'] = 0.0
 
 		self.ic_new = ic_new
 		self.ic_grainRadius = ic_grainRadius
@@ -265,9 +260,15 @@ class optimization():
 		
 		self.sf_selected_bounds = np.zeros([2,len(self.sf_selected_initial_value)])
 		for i in range(len(self.sf_selected)):
+			if self.sf_selected[i] == "resolution rate":
+				self.sf_selected_bounds[0,i] = 0.5
+				self.sf_selected_bounds[1,i] = 1.5
+			if self.sf_selected[i] == "trapping rate":
+				self.sf_selected_bounds[0,i] = 0.5
+				self.sf_selected_bounds[1,i] = 1.5
 			if self.sf_selected[i] == "helium diffusivity pre exponential":
-				self.sf_selected_bounds[0,i] = np.log(0.05)
-				self.sf_selected_bounds[1,i] = np.log(19.9)
+				self.sf_selected_bounds[0,i] = 0.05
+				self.sf_selected_bounds[1,i] = 19.9
 			elif self.sf_selected[i] == "helium diffusivity activation energy":
 				self.sf_selected_bounds[0,i] = 0.835
 				self.sf_selected_bounds[1,i] = 1.2
@@ -278,8 +279,15 @@ class optimization():
 				self.sf_selected_bounds[0,i] = 0.431
 				self.sf_selected_bounds[1,i] = 1.55
 			else:
-				self.sf_selected_bounds[0,i] = 0
-				self.sf_selected_bounds[0,i] = float('inf')
+				pass
+
+		print('Lower bound for the scaling factors')
+		print(self.sf_selected)
+		print(self.sf_selected_bounds[0,:])
+		print('Upper bound for the scaling factors')
+		print(self.sf_selected)
+		print(self.sf_selected_bounds[1,:])
+
 		self.bounds = Bounds(self.sf_selected_bounds[0,:],self.sf_selected_bounds[1,:])
 
 	def optimization(self,inputOutput):
@@ -528,9 +536,8 @@ class optimization():
 		# - 'trust-exact' :ref:`(see here) <optimize.minimize-trustexact>`
 		# - 'trust-krylov' :ref:`(see here) <optimize.minimize-trustkrylov>`
 
-		results = optimize.minimize(costFunction, self.sf_selected_initial_value, method = 'COBYLA', bounds=self.bounds, tol=0.001, options={'disp': True})
-		# results = optimize.minimize(costFunction, self.sf_selected_initial_value, method = 'Nelder-Mead', bounds=self.bounds, tol=0.001, options={'xatol': 1e-8, 'disp': True})
-		# results = optimize.minimize(costFunction, self.sf_selected_initial_value)
+		# results = optimize.minimize(costFunction, self.sf_selected_initial_value, method = 'COBYLA', bounds=self.bounds, tol=0.001, options={'disp': True})
+		results = optimize.minimize(costFunction, self.sf_selected_initial_value, method = 'Nelder-Mead', bounds=self.bounds, tol=0.001, options={'xatol': 1e-8, 'disp': True})
 		
 		# List of available GLOBAL optimization methods
 		# ---------------------------------------------
@@ -541,7 +548,7 @@ class optimization():
 		# dual_annealing(func, bounds[, args, ...]) # Find the global minimum of a function using Dual Annealing.
 		# direct(func, bounds, *[, args, eps, maxfun, ...])	# Finds the global minimum of a function using the DIRECT algorithm.
 		
-		results = optimize.differential_evolution(func=costFunction, bounds=self.bounds, args=(), strategy='best1bin', maxiter=1000, popsize=15, tol=0.01, mutation=(0.5, 1), recombination=0.7, seed=None, callback=None, disp=False, polish=True, init='latinhypercube', atol=0, updating='immediate', workers=1, constraints=(), x0=None, integrality=None, vectorized=False)
+		# results = optimize.differential_evolution(func=costFunction, bounds=self.bounds, args=(), strategy='best1bin', maxiter=1000, popsize=15, tol=0.01, mutation=(0.5, 1), recombination=0.7, seed=None, callback=None, disp=False, polish=True, init='latinhypercube', atol=0, updating='immediate', workers=1, constraints=(), x0=None, integrality=None, vectorized=False)
 
 		self.optimization_results = np.zeros(len(self.sf_selected)+1)
 		for i in range(len(self.sf_selected)):
@@ -553,12 +560,8 @@ class optimization():
 		
 		with open("input_scaling_factors.txt",'w') as file:
 			for key, value in self.scaling_factors.items():
-				if(f'{key}' == 'helium diffusivity pre exponential'):
-					file.write(f'{np.exp(value)}\n')
-					file.write(f'# scaling factor - {key}\n')
-				else:
-					file.write(f'{value}\n')
-					file.write(f'# scaling factor - {key}\n')	
+				file.write(f'{value}\n')
+				file.write(f'# scaling factor - {key}\n')	
 		
 		# sciantix simulation with optimized sf
 		os.system("./sciantix.x")
@@ -779,6 +782,7 @@ def do_plot(Talip1320):
 	
 	os.chdir("../..")
 
+#####################
 # ONLINE optimization
 #####################
 
@@ -787,15 +791,15 @@ def do_plot(Talip1320):
 # num_steps = 30
 # ref_points = np.linspace(start, end, num_steps).reshape(-1, 1).round(2)
 
-
 ref_points = np.array([[0], [0.37], [0.45], [0.55], [0.65], [0.744], [1.5], [2.5], [3.65],[3.867]])
 ref_case = "test_Talip2014_1600K"
 time_points = ref_points
 number_of_interval = len(time_points) - 1
 
-sf_optimized = np.ones((number_of_interval+1,2))
+sf_number = 6
+sf_optimized = np.ones((number_of_interval+1,sf_number))
 error_optimized = np.zeros((number_of_interval+1,1))
-results_data = np.empty((number_of_interval+2,4),dtype = object)
+results_data = np.empty((number_of_interval+2,sf_number+2),dtype = object)
 final_data = np.empty((0,4))
 final_data_interpolated = np.empty((0,4))
 
@@ -806,7 +810,14 @@ for i in range(1,number_of_interval+1):
 	Talip1320.setStartEndTime(time_points[i-1][0],time_points[i][0])
 
 	Talip1320.setInitialConditions()
-	Talip1320.setScalingFactors("helium diffusivity pre exponential", "helium diffusivity activation energy")
+	Talip1320.setScalingFactors(
+		"resolution rate",
+		"trapping rate",
+		"helium diffusivity pre exponential",
+		"helium diffusivity activation energy",
+		"henry constant pre exponential",
+		"henry constant activation energy"
+	)
 	
 	setInputOutput = inputOutput()
 
@@ -814,29 +825,31 @@ for i in range(1,number_of_interval+1):
 
 	results_data[i+1,1:] = Talip1320.optimization_results
 	results_data[i+1,0] = time_points[i][0]
+
+	results_data[0,0] = "time"
+	results_data[0,1:(sf_number+1)] = Talip1320.sf_selected
+	results_data[0,(sf_number+1)] = "error"
+	results_data[1,:] = [0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0]
+
+	with open(f"optimization_online.txt", 'w') as file:
+		for row in results_data:
+			line = "\t".join(map(str, row))
+			file.write(line + "\n")
+
 	final_data = np.vstack((final_data, Talip1320.final_data))
 	final_data_interpolated = np.vstack((final_data_interpolated, Talip1320.final_interpolated))
 
-results_data[0,0] = "time"
-results_data[0,1:3] = Talip1320.sf_selected
-results_data[0,3] = "error"
-results_data[1,:] = [0,1.0,1.0,0]
-
-with open(f"optimization_online.txt", 'w') as file:
-	for row in results_data:
-		line = "\t".join(map(str, row))
-		file.write(line + "\n")
-
+######################
 # OFFLINE optimization
 ######################
 
 ref_points = np.array([[0],[3.867]])
-# time_points = ref_points
+time_points = ref_points
 number_of_interval = len(time_points) - 1
 
-sf_optimized = np.ones((number_of_interval+1,2))
+sf_optimized = np.ones((number_of_interval+1,sf_number))
 error_optimized = np.zeros((number_of_interval+1,1))
-results_data = np.empty((number_of_interval+2,4),dtype = object)
+results_data = np.empty((number_of_interval+2,sf_number+2),dtype = object)
 
 for i in range(1,number_of_interval+1):
 
@@ -845,16 +858,23 @@ for i in range(1,number_of_interval+1):
 
 	Talip1320.setStartEndTime(0,time_points[i][0])
 	Talip1320.setInitialConditions()
-	Talip1320.setScalingFactors("helium diffusivity pre exponential", "helium diffusivity activation energy")
+	Talip1320.setScalingFactors(
+		"resolution rate",
+		"trapping rate",
+		"helium diffusivity pre exponential",
+		"helium diffusivity activation energy",
+		"henry constant pre exponential",
+		"henry constant activation energy"
+	)
 	setInputOutput = inputOutput()
 	Talip1320.optimization(setInputOutput)
 	results_data[i+1,1:] = Talip1320.optimization_results
 	results_data[i+1,0] = time_points[i][0]
 
 results_data[0,0] = "time"
-results_data[0,1:3] = Talip1320.sf_selected
-results_data[0,3] = "error"
-results_data[1,:] = [0,1.0,1.0,0]
+results_data[0,1:(sf_number+1)] = Talip1320.sf_selected
+results_data[0,(sf_number+1)] = "error"
+results_data[1,:] = [0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0]
 
 with open(f"optimization_offline.txt", 'w') as file:
 	for row in results_data:
