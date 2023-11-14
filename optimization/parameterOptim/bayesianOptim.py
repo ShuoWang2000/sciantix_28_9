@@ -584,32 +584,44 @@ class optimization():
 			# 		error = -1 * len(FR_interpolated)
 
 
-			if max(FR_interpolated) != 0 and max(abs(dFR_dt)) !=0:
-				if max(abs((FR_interpolated - FR_sciantix )/max(FR_interpolated)))> 0.05:
-					error = -max(abs(FR_interpolated - FR_sciantix))/max(FR_interpolated) *max(abs(dFR_dt))/max(FR_interpolated) 
-				else:
-					error = -max(abs(error_derivative))/max(abs(dFR_dt))
-			elif max(FR_interpolated) == 0 and max(abs(dFR_dt)) !=0:
-				if max(FR_sciantix) != 0:
-					error = -1*len(FR_interpolated)*max(abs(dFR_dt))/max(FR_interpolated)-sum(abs(error_derivative))/max(abs(dFR_dt))
-				else:
-					error = -sum(abs(error_derivative))/max(abs(dFR_dt))
-			elif max(FR_interpolated) != 0 and max(abs(dFR_dt)) ==0:
-				if max(dFR_dt_sciantix) != 0:
-					error = -sum(abs(FR_interpolated - FR_sciantix))/max(FR_interpolated)*max(abs(dFR_dt))/max(FR_interpolated) - 1 * len(dFR_dt)
-				else:
-					error = -sum(abs(FR_interpolated - FR_sciantix))/max(FR_interpolated)*max(abs(dFR_dt))/max(FR_interpolated)
-			else: #max(FR_interpolated) == 0 and max(abs(dFR_dt)) ==0:
-				if max(FR_sciantix) != 0 and max(dFR_dt_sciantix) != 0:
-					error = - 2 * len(FR_interpolated)
-				elif max(FR_sciantix) == 0 and max(dFR_dt_sciantix) == 0:
-					error = 0
-				else:
-					error = -1 * len(FR_interpolated)
+			# if max(FR_interpolated) != 0 and max(abs(dFR_dt)) !=0:
+			# 	if max(abs((FR_interpolated - FR_sciantix )/max(FR_interpolated)))> 0.05:
+			# 		error = -max(abs(FR_interpolated - FR_sciantix))/max(FR_interpolated) *max(abs(dFR_dt))/max(FR_interpolated) 
+			# 	else:
+			# 		error = -max(abs(error_derivative))/max(abs(dFR_dt))
+			# elif max(FR_interpolated) == 0 and max(abs(dFR_dt)) !=0:
+			# 	if max(FR_sciantix) != 0:
+			# 		error = -1*len(FR_interpolated)*max(abs(dFR_dt))/max(FR_interpolated)-sum(abs(error_derivative))/max(abs(dFR_dt))
+			# 	else:
+			# 		error = -sum(abs(error_derivative))/max(abs(dFR_dt))
+			# elif max(FR_interpolated) != 0 and max(abs(dFR_dt)) ==0:
+			# 	if max(dFR_dt_sciantix) != 0:
+			# 		error = -sum(abs(FR_interpolated - FR_sciantix))/max(FR_interpolated)*max(abs(dFR_dt))/max(FR_interpolated) - 1 * len(dFR_dt)
+			# 	else:
+			# 		error = -sum(abs(FR_interpolated - FR_sciantix))/max(FR_interpolated)*max(abs(dFR_dt))/max(FR_interpolated)
+			# else: #max(FR_interpolated) == 0 and max(abs(dFR_dt)) ==0:
+			# 	if max(FR_sciantix) != 0 and max(dFR_dt_sciantix) != 0:
+			# 		error = - 2 * len(FR_interpolated)
+			# 	elif max(FR_sciantix) == 0 and max(dFR_dt_sciantix) == 0:
+			# 		error = 0
+			# 	else:
+			# 		error = -1 * len(FR_interpolated)
 			
-			# if max(abs((FR_interpolated - FR_sciantix )/FR_interpolated)) > 0.05:
+			FR_interpolated_low = FR_interpolated * (0.95)
+			FR_interpolated_up = FR_interpolated * (1.05)
+			dFR_dt_mean =np.average(dFR_dt[~np.isnan(dFR_dt)])
+			error_related = np.zeros_like(FR_sciantix)
 
-			
+			for i in range(len(FR_sciantix)):
+				if FR_sciantix[i] > FR_interpolated_up[i] or FR_sciantix[i] < FR_interpolated_low[i]:
+					error_related[i] = 10 * abs((FR_sciantix[i] - FR_interpolated[i]))
+				elif FR_sciantix[i] < FR_interpolated_up[i] and FR_sciantix[i] > FR_interpolated_low[i]:
+					if max(dFR_dt_sciantix) - min(dFR_dt_sciantix) > 0.05*dFR_dt_mean:
+						error_related[i] = 5 * abs(FR_interpolated[i] - FR_sciantix[i])
+					else:
+						error_related[i] = abs(FR_interpolated[i] - FR_sciantix[i])
+
+			error = -sum(error_related)
 			return error
 		
 		
