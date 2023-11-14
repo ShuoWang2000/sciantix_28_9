@@ -911,8 +911,8 @@ def do_plot(Talip1320):
 #####################
 
 start = 0
-end = 3.967
-num_steps = 30
+end = 0.744
+num_steps = 10
 ref_points = np.linspace(start, end, num_steps).reshape(-1, 1).round(2)
 
 
