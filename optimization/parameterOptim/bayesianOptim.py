@@ -625,12 +625,12 @@ class optimization():
 			
 			else:
 				if FR_sciantix[-1] > FR_interpolated_up[-1] or FR_sciantix[-1] < FR_interpolated_low[-1]:
-					error = 10 * abs((FR_sciantix[-1] - FR_interpolated[-1]))
+					error = -10 * abs((FR_sciantix[-1] - FR_interpolated[-1]))
 				elif FR_sciantix[-1] < FR_interpolated_up[-1] and FR_sciantix[-1] > FR_interpolated_low[-1]:
 					if max(dFR_dt_sciantix) - min(dFR_dt_sciantix) > 0.05*dFR_dt_mean:
-						error = 5 * abs(FR_interpolated[-1] - FR_sciantix[-1])
+						error = -5 * abs(FR_interpolated[-1] - FR_sciantix[-1])
 					else:
-						error= abs(FR_interpolated[-1] - FR_sciantix[-1])
+						error= -abs(FR_interpolated[-1] - FR_sciantix[-1])
 				
 
 			
