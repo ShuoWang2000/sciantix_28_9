@@ -34,10 +34,10 @@ def readSFfromInputScalingFactors(end_time, keyword):
     """
     find_value =False
     current_directory = os.getcwd()
-    parent_directory = os.path.dirname(current_directory)
-    for folder_name in os.listdir(parent_directory):
-        if folder_name == f"Optimization_0__{end_time}_":
-            os.chdir(f"Optimization_0__{end_time}_")
+    for folder_name in os.listdir(current_directory):
+        # print(folder_name)
+        if folder_name == f"Optimization_0_{end_time}_":
+            os.chdir(f"Optimization_0_{end_time}_")
             with open("input_scaling_factors.txt", 'r') as file:
                 line_number = 0
                 previous_line = None
@@ -49,6 +49,7 @@ def readSFfromInputScalingFactors(end_time, keyword):
             if previous_line is not None:
                 value = float(previous_line)
                 find_value = True
+            
             break
         else:
             pass
@@ -57,6 +58,7 @@ def readSFfromInputScalingFactors(end_time, keyword):
         pass
     else:
         value = "No data"
+    os.chdir(current_directory)
     return value
 
 
@@ -224,8 +226,8 @@ ax[1].set_ylabel('Helium release rate (at m${}^{-3}$ s${}^{-1}$)')
 ax[1].legend()
 
 sf_D0 = readSFfromInputScalingFactors(time_end1[-1], "helium diffusivity pre exponential")
-sf_De = readSFfromInputScalingFactors(time_end1[-1], "helium diffusivity activation energy")
-plt.title(f"sf_D0:{sf_D0}; sf_De: {sf_De} ")
+sf_Ea = readSFfromInputScalingFactors(time_end1[-1], "helium diffusivity activation energy")
+plt.title(f"sf_D0:{np.round(sf_D0,3)}; sf_Ea: {np.round(sf_Ea,3)} ")
 
 # plt.savefig(file + '.png')
 plt.show()
