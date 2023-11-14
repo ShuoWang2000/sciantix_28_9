@@ -613,9 +613,9 @@ class optimization():
 			
 			if RR_sciantix[-1] < 0:
 				RR_sciantix[-1] = RR_sciantix[-2]
-			if self.output_previous[-1,3] < 0:
-				self.output_previous[-1,3] = self.output_previous[-2,3]
 			if self.time_start != 0:
+				if self.output_previous[-1,3] < 0:
+					self.output_previous[-1,3] = self.output_previous[-2,3]
 				RR_sciantix[0] = self.output_previous[-1,3]
 			
 
