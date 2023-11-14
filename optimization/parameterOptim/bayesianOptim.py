@@ -562,11 +562,35 @@ class optimization():
 			# 		error = -2
 
 
+			# if max(FR_interpolated) != 0 and max(abs(dFR_dt)) !=0:
+			# 	error = -sum(abs(FR_interpolated - FR_sciantix))/max(FR_interpolated) *max(abs(dFR_dt))/max(FR_interpolated) -sum(abs(error_derivative))/max(abs(dFR_dt))
+			# elif max(FR_interpolated) == 0 and max(abs(dFR_dt)) !=0:
+			# 	if max(FR_sciantix) != 0:
+
+			# 		error = -1*len(FR_interpolated)*max(abs(dFR_dt))/max(FR_interpolated)-sum(abs(error_derivative))/max(abs(dFR_dt))
+			# 	else:
+			# 		error = -sum(abs(error_derivative))/max(abs(dFR_dt))
+			# elif max(FR_interpolated) != 0 and max(abs(dFR_dt)) ==0:
+			# 	if max(dFR_dt_sciantix) != 0:
+			# 		error = -sum(abs(FR_interpolated - FR_sciantix))/max(FR_interpolated)*max(abs(dFR_dt))/max(FR_interpolated) - 1 * len(dFR_dt)
+			# 	else:
+			# 		error = -sum(abs(FR_interpolated - FR_sciantix))/max(FR_interpolated)*max(abs(dFR_dt))/max(FR_interpolated)
+			# else: #max(FR_interpolated) == 0 and max(abs(dFR_dt)) ==0:
+			# 	if max(FR_sciantix) != 0 and max(dFR_dt_sciantix) != 0:
+			# 		error = - 2 * len(FR_interpolated)
+			# 	elif max(FR_sciantix) == 0 and max(dFR_dt_sciantix) == 0:
+			# 		error = 0
+			# 	else:
+			# 		error = -1 * len(FR_interpolated)
+
+
 			if max(FR_interpolated) != 0 and max(abs(dFR_dt)) !=0:
-				error = -sum(abs(FR_interpolated - FR_sciantix))/max(FR_interpolated) *max(abs(dFR_dt))/max(FR_interpolated) -sum(abs(error_derivative))/max(abs(dFR_dt))
+				if max(abs((FR_interpolated - FR_sciantix )/FR_interpolated))> 0.05:
+					error = -sum(abs(FR_interpolated - FR_sciantix))/max(FR_interpolated) *max(abs(dFR_dt))/max(FR_interpolated) 
+				else:
+					error =-sum(abs(FR_interpolated - FR_sciantix))/max(FR_interpolated) *max(abs(dFR_dt))/max(FR_interpolated)  -sum(abs(error_derivative))/max(abs(dFR_dt))
 			elif max(FR_interpolated) == 0 and max(abs(dFR_dt)) !=0:
 				if max(FR_sciantix) != 0:
-
 					error = -1*len(FR_interpolated)*max(abs(dFR_dt))/max(FR_interpolated)-sum(abs(error_derivative))/max(abs(dFR_dt))
 				else:
 					error = -sum(abs(error_derivative))/max(abs(dFR_dt))
@@ -583,7 +607,8 @@ class optimization():
 				else:
 					error = -1 * len(FR_interpolated)
 			
-			
+			# if max(abs((FR_interpolated - FR_sciantix )/FR_interpolated)) > 0.05:
+
 			
 			return error
 		
