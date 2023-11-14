@@ -88,7 +88,10 @@ class inputOutput():
 				if(f'{key}' == 'helium diffusivity pre exponential'):
 					file.write(f'{np.exp(value)}\n')
 					file.write(f'# scaling factor - {key}\n')
-					# print(np.exp(value))
+				elif(f'{key}' == 'henry constant pre exponential'):
+					file.write(f'{np.exp(value)}\n')
+					file.write(f'# scaling factor - {key}\n')
+
 				else:
 					file.write(f'{value}\n')
 					file.write(f'# scaling factor - {key}\n')		
@@ -246,6 +249,7 @@ class optimization():
 				i += 2
 
 			self.scaling_factors['helium diffusivity pre exponential'] = 0.0
+			self.scaling_factors['henry constant pre exponential'] = 0.0
 
 		self.ic_new = ic_new
 		self.ic_grainRadius = ic_grainRadius
@@ -277,8 +281,8 @@ class optimization():
 				self.sf_selected_bounds[0,i] = 0.835
 				self.sf_selected_bounds[1,i] = 1.2
 			elif self.sf_selected[i] == "henry constant pre exponential":
-				self.sf_selected_bounds[0,i] = 0.0627
-				self.sf_selected_bounds[1,i] = 16.09
+				self.sf_selected_bounds[0,i] = np.log(0.0627)
+				self.sf_selected_bounds[1,i] = np.log(16.09)
 			elif self.sf_selected[i] == "henry constant activation energy":
 				self.sf_selected_bounds[0,i] = 0.431
 				self.sf_selected_bounds[1,i] = 1.55
@@ -706,6 +710,9 @@ class optimization():
 				if(f'{key}' == 'helium diffusivity pre exponential'):
 					file.write(f'{np.exp(value)}\n')
 					file.write(f'# scaling factor - {key}\n')
+				elif(f'{key}' == 'henry constant pre exponential'):
+					file.write(f'{np.exp(value)}\n')
+					file.write(f'# scaling factor - {key}\n')
 				else:
 					file.write(f'{value}\n')
 					file.write(f'# scaling factor - {key}\n')	
@@ -977,7 +984,7 @@ for i in range(1,number_of_interval+1):
 	results_data[0,0] = "time"
 	results_data[0,1:(sf_number+1)] = Talip1320.sf_selected
 	results_data[0,(sf_number+1)] = "error"
-	results_data[1,:] = [0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0]
+	results_data[1,:] = [0, 1.0, 1.0, 1.0, 1.0, 0]
 
 	with open(f"optimization_online.txt", 'w') as file:
 		for row in results_data:
@@ -1022,7 +1029,7 @@ for i in range(1,number_of_interval+1):
 # results_data[0,0] = "time"
 # results_data[0,1:(sf_number+1)] = Talip1320.sf_selected
 # results_data[0,(sf_number+1)] = "error"
-# results_data[1,:] = [0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0]
+# results_data[1,:] = [0, 1.0, 1.0, 1.0, 1.0, 0]
 
 # with open(f"optimization_offline.txt", 'w') as file:
 # 	for row in results_data:
