@@ -585,7 +585,7 @@ class optimization():
 
 
 			if max(FR_interpolated) != 0 and max(abs(dFR_dt)) !=0:
-				if max(abs((FR_interpolated - FR_sciantix )/FR_interpolated))> 0.05:
+				if max(abs((FR_interpolated - FR_sciantix )/max(FR_interpolated)))> 0.05:
 					error = -max(abs(FR_interpolated - FR_sciantix))/max(FR_interpolated) *max(abs(dFR_dt))/max(FR_interpolated) 
 				else:
 					error = -max(abs(error_derivative))/max(abs(dFR_dt))
