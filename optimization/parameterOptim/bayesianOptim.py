@@ -645,7 +645,7 @@ class optimization():
 				elif FR_sciantix[-1] <= FR_interpolated[-1]:
 					if FR_sciantix[-1] > FR_interpolated_low[-1]:
 						if (dFR_dt_sciantix[1] - self.output_previous[-1,3]*3600/Helium_total)/(self.output_previous[-1,3]*3600/Helium_total )> 0.05:
-							error = -5 * abs(FR_interpolated[-1] - FR_sciantix[-1])
+							error = -15 * abs(FR_interpolated[-1] - FR_sciantix[-1])
 						else:
 							error= -abs(FR_interpolated[-1] - FR_sciantix[-1])
 					elif FR_sciantix[-1] < FR_interpolated_low[-1]:
@@ -701,6 +701,8 @@ class optimization():
 		for i in range(len(self.sf_selected)):
 			self.scaling_factors[self.sf_selected[i]] = optimizer.max['params'][self.sf_selected[i]]
 			if self.sf_selected[i] == "helium diffusivity pre exponential":
+				self.optimization_results[i] = np.exp(optimizer.max['params'][self.sf_selected[i]])
+			elif self.sf_selected[i] == "henry constant pre exponential":
 				self.optimization_results[i] = np.exp(optimizer.max['params'][self.sf_selected[i]])
 			else:
 				self.optimization_results[i] = optimizer.max['params'][self.sf_selected[i]]
