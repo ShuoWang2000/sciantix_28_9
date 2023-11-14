@@ -624,9 +624,17 @@ class optimization():
 			
 			
 			else:
-				if FR_sciantix[-1] > FR_interpolated_up[-1] or FR_sciantix[-1] < FR_interpolated_low[-1]:
+				if FR_sciantix[-1] > FR_interpolated[-1] and RR_sciantix[-1] > dFR_dt[~np.isnan(dFR_dt)][-1]:
+					error = -15 * abs((FR_sciantix[-1] - FR_interpolated[-1]))
+				
+				elif FR_sciantix[-1] > FR_interpolated[-1] and RR_sciantix[-1] < dFR_dt[~np.isnan(dFR_dt)][-1]:
 					error = -10 * abs((FR_sciantix[-1] - FR_interpolated[-1]))
-				elif FR_sciantix[-1] < FR_interpolated_up[-1] and FR_sciantix[-1] > FR_interpolated_low[-1]:
+				
+				elif FR_sciantix[-1] < FR_interpolated_low[-1]:
+					error = -10 * abs((FR_sciantix[-1] - FR_interpolated[-1]))
+				
+				elif FR_sciantix[-1] < FR_interpolated[-1] and FR_sciantix[-1] > FR_interpolated_low[-1]:
+
 					if (dFR_dt_sciantix[1] - self.output_previous[-1,3])/self.output_previous[-1,3] > 0.05:
 						error = -5 * abs(FR_interpolated[-1] - FR_sciantix[-1])
 					# if max(dFR_dt_sciantix) - min(dFR_dt_sciantix) > 0.05*dFR_dt_mean:
