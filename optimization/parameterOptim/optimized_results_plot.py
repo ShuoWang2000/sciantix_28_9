@@ -27,7 +27,7 @@ def getSelectedVariablesValueFromOutput(variable_selected, source_file):
     
     return variable_selected_value
 
-os.chdir("test_Talip2014_1600K")
+os.chdir("test_Talip2014_1320K")
 current_directory = os.getcwd()
 
 
@@ -37,7 +37,7 @@ current_directory = os.getcwd()
 
 keyword = "Optimization_0_"
 folder1_collection = []
-pattern = r'Optimization_\d+_(\d+\.\d+)_'
+pattern = r'Optimization_\d+_(\d+\.\d+)'
 find = False
 for folder_name in os.listdir(current_directory):
     folder_path = os.path.join(current_directory, folder_name)
@@ -55,8 +55,8 @@ time_end = np.array(time_end)
 
 time_end_previous = np.max(time_end)
 time_end_first = np.min(time_end)
-folder_path_global_time_end_previous = os.path.join(current_directory, f"Optimization_0_{time_end_previous}_")
-folder_path_global_time_end_first = os.path.join(current_directory, f"Optimization_0_{time_end_first}_")
+folder_path_global_time_end_previous = os.path.join(current_directory, f"Optimization_0_{time_end_previous}")
+folder_path_global_time_end_first = os.path.join(current_directory, f"Optimization_0_{time_end_first}")
 
 variable_selected = np.array(["Time (h)","Temperature (K)","He fractional release (/)", "He release rate (at/m3 s)"])
 
@@ -68,13 +68,15 @@ os.chdir(folder_path_global_time_end_first)
 data0 = getSelectedVariablesValueFromOutput(np.array(["Time (h)","Temperature (K)","He fractional release (/)", "He release rate (at/m3 s)"]),"output.txt")
 length0 = len(data0)
 
-# ONLINE
-# ######
 
+
+#############
+# the online one
+#############
 os.chdir(current_directory)
 
 keyword2 = "Optimization_"
-pattern2 = r'Optimization_(\d+\.\d+)+__(\d+\.\d+)_'
+pattern2 = r'Optimization_(\d+\.\d+)+__(\d+\.\d+)'
 
 folder2_collection = []
 find2 = False
@@ -105,7 +107,7 @@ length = np.zeros(len(time_start2))
 time = []
 
 for i in range(len(time_start2)):
-    os.chdir(f"Optimization_{time_start2[i]}__{time_end2[i]}_")
+    os.chdir(f"Optimization_{time_start2[i]}__{time_end2[i]}")
     data_output = getSelectedVariablesValueFromOutput(variable_selected, "output.txt")
     length[i] = len(data_output)
     # data_output[:,0] = data_output[:,0] + time_start2[i]
@@ -162,6 +164,7 @@ for i in range(0,len(time_start2)):
 
 # ax[0].scatter(time_new[length0:int(length[0])], FR_new[length0:int(length[0])], marker = 'x',label = f'optimized_0.567__1.134')
 
+
 # ax[0].scatter(time_new, FR_interpolated, marker = 'x',color = 'blue',label = 'interpolated')
 axT = ax[0].twinx()
 axT.set_ylabel('Temperature (K)')
@@ -186,8 +189,6 @@ for i in range(0,len(time_start2)):
 ax[1].set_xlabel('Temperature (K)')
 ax[1].set_ylabel('Helium release rate (at m${}^{-3}$ s${}^{-1}$)')
 ax[1].legend()
-
-plt.title("sf: ")
 
 # plt.savefig(file + '.png')
 plt.show()
