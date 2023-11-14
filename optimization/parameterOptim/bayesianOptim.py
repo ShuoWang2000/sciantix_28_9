@@ -611,6 +611,14 @@ class optimization():
 			# 	else:
 			# 		error = -1 * len(FR_interpolated)
 			
+			if RR_sciantix[-1] < 0:
+				RR_sciantix[-1] = RR_sciantix[-2]
+			if self.output_previous[-1,3] < 0:
+				self.output_previous[-1,3] = self.output_previous[-2,3]
+			if self.time_start != 0:
+				RR_sciantix[0] = self.output_previous[-1,3]
+			
+
 			FR_interpolated_low = FR_interpolated * (0.98)
 			FR_interpolated_up = FR_interpolated * (1.02)
 			dFR_dt_mean =np.average(dFR_dt[~np.isnan(dFR_dt)])
@@ -636,7 +644,7 @@ class optimization():
 
 				elif FR_sciantix[-1] <= FR_interpolated[-1]:
 					if FR_sciantix[-1] > FR_interpolated_low[-1]:
-						if (dFR_dt_sciantix[1] - self.output_previous[-1,3])/self.output_previous[-1,3] > 0.05:
+						if (dFR_dt_sciantix[1] - self.output_previous[-1,3]*3600/Helium_total)/(self.output_previous[-1,3]*3600/Helium_total )> 0.05:
 							error = -5 * abs(FR_interpolated[-1] - FR_sciantix[-1])
 						else:
 							error= -abs(FR_interpolated[-1] - FR_sciantix[-1])
@@ -946,7 +954,6 @@ ref_points = np.array([[0], [0.2], [0.3], [0.4], [0.45], [0.5], [0.55], [0.6], [
 ref_case = "test_Talip2014_1600K"
 time_points = ref_points
 number_of_interval = len(time_points) - 1
-
 
 sf_number = 4
 sf_optimized = np.ones((number_of_interval+1,sf_number))
