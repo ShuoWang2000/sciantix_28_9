@@ -910,13 +910,13 @@ def do_plot(Talip1320):
 # ONLINE optimization
 #####################
 
-# start = 0
-# end = 5.67
-# num_steps = 30
-# ref_points = np.linspace(start, end, num_steps).reshape(-1, 1).round(2)
+start = 0
+end = 3.967
+num_steps = 30
+ref_points = np.linspace(start, end, num_steps).reshape(-1, 1).round(2)
 
 
-ref_points = np.array([[0], [0.37], [0.45], [0.55], [0.65], [0.744], [1.5], [2.5], [3.65],[3.867]])
+# ref_points = np.array([[0], [0.37], [0.45], [0.55], [0.65], [0.744], [1.5], [2.5], [3.65],[3.867]])
 ref_case = "test_Talip2014_1600K"
 time_points = ref_points
 number_of_interval = len(time_points) - 1
