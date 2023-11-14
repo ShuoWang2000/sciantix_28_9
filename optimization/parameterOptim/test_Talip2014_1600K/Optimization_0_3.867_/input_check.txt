@@ -75,15 +75,11 @@ Initial stoichiometry deviation[0] = 0
 2.5	1600	0	0	
 3.65	1600	0	0	
 3.867	874.16	0	0	
-sf_resolution_rate = 1.47969
-sf_trapping_rate = 0.500341
+sf_resolution_rate = 1
+sf_trapping_rate = 1
 sf_nucleation_rate = 1
 sf_diffusivity = 1
 sf_temperature = 1
 sf_fission_rate = 1
 sf_cent_parameter = 1
 sf_helium_production_rate = 1
-sf_diffusivity_preExp = 0.939899
-sf_diffusivity_actEnergy = 0.842907
-sf_henryConst_preExp = 1.10425
-sf_henryConst_actEnergy = 0.432947
