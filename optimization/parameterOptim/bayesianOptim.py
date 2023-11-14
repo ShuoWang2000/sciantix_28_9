@@ -972,31 +972,31 @@ with open(f"optimization_online.txt", 'w') as file:
 
 # ref_points = np.array([[0],[3.867]])
 # time_points = ref_points
-number_of_interval = len(time_points) - 1
+# number_of_interval = len(time_points) - 1
 
-sf_optimized = np.ones((number_of_interval+1,2))
-error_optimized = np.zeros((number_of_interval+1,1))
-results_data = np.empty((number_of_interval+2,4),dtype = object)
+# sf_optimized = np.ones((number_of_interval+1,2))
+# error_optimized = np.zeros((number_of_interval+1,1))
+# results_data = np.empty((number_of_interval+2,4),dtype = object)
 
-for i in range(1,number_of_interval+1):
+# for i in range(1,number_of_interval+1):
 
-	Talip1320 = optimization()
-	Talip1320.setCase(ref_case)
+# 	Talip1320 = optimization()
+# 	Talip1320.setCase(ref_case)
 
-	Talip1320.setStartEndTime(0,time_points[i][0])
-	Talip1320.setInitialConditions()
-	Talip1320.setScalingFactors("helium diffusivity pre exponential", "helium diffusivity activation energy")
-	setInputOutput = inputOutput()
-	Talip1320.optimization(setInputOutput)
-	results_data[i+1,1:] = Talip1320.optimization_results
-	results_data[i+1,0] = time_points[i][0]
+# 	Talip1320.setStartEndTime(0,time_points[i][0])
+# 	Talip1320.setInitialConditions()
+# 	Talip1320.setScalingFactors("helium diffusivity pre exponential", "helium diffusivity activation energy")
+# 	setInputOutput = inputOutput()
+# 	Talip1320.optimization(setInputOutput)
+# 	results_data[i+1,1:] = Talip1320.optimization_results
+# 	results_data[i+1,0] = time_points[i][0]
 
-results_data[0,0] = "time"
-results_data[0,1:3] = Talip1320.sf_selected
-results_data[0,3] = "error"
-results_data[1,:] = [0,1.0,1.0,0]
+# results_data[0,0] = "time"
+# results_data[0,1:3] = Talip1320.sf_selected
+# results_data[0,3] = "error"
+# results_data[1,:] = [0,1.0,1.0,0]
 
-with open(f"optimization_offline.txt", 'w') as file:
-	for row in results_data:
-		line = "\t".join(map(str, row))
-		file.write(line + "\n")
+# with open(f"optimization_offline.txt", 'w') as file:
+# 	for row in results_data:
+# 		line = "\t".join(map(str, row))
+# 		file.write(line + "\n")
