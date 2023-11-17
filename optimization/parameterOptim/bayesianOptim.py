@@ -295,7 +295,7 @@ class optimization():
 		for i in range(len(self.sf_selected)):
 			self.BO_bounds[self.sf_selected[i]] = (self.sf_selected_bounds[0,i], self.sf_selected_bounds[1,i])
 
-	def optimization(self,inputOutput):
+	def optimization(self,inputOutput, new_bounds):
 		
 		inputOutput.writeInputHistory(self.history_original, self.time_start, self.time_end)
 		inputOutput.writeInputInitialConditions(self.ic_new, self.ic_grainRadius, self.ic_intraGrainBubbleRadius)
@@ -521,178 +521,135 @@ class optimization():
 					if i < len(data) -1 :
 						file.write("\n")
 
-
+			# error function
+			error =  - max(abs(FR_sciantix - FR_interpolated))
 
 			# error function
 			# # error_slop = -max(abs(dFR_dt - dFR_dt_sciantix))
 			# print(dFR_dt)
 			# print(dFR_dt_sciantix)
-			error_derivative = np.zeros_like(dFR_dt_sciantix)
-			dFR_dt_last = 0
-			for j in range(len(dFR_dt_sciantix)):
-				if np.isnan(dFR_dt_sciantix)[j] == False and np.isnan(dFR_dt)[j] ==  False:
-					error_derivative[j] = dFR_dt[j] - dFR_dt_sciantix[j]
-				else:
-					error_derivative[j] = 0
-					break
-			for i in range(len(dFR_dt)):
-				if error_derivative[::-1][i] > 10^-9:
-					error_derivative_last = error_derivative[i]
-					dFR_dt_last = dFR_dt[i]
-					break
+			# error_derivative = np.zeros_like(dFR_dt_sciantix)
+			# dFR_dt_last = 0
+			# for j in range(len(dFR_dt_sciantix)):
+			# 	if np.isnan(dFR_dt_sciantix)[j] == False and np.isnan(dFR_dt)[j] ==  False:
+			# 		error_derivative[j] = dFR_dt[j] - dFR_dt_sciantix[j]
+			# 	else:
+			# 		error_derivative[j] = 0
+			# 		break
+			# for i in range(len(dFR_dt)):
+			# 	if error_derivative[::-1][i] > 10^-9:
+			# 		error_derivative_last = error_derivative[i]
+			# 		dFR_dt_last = dFR_dt[i]
+			# 		break
+			
+			#########################################################################
+			# if RR_sciantix[-1] < 0:
+			# 	RR_sciantix[-1] = RR_sciantix[-2]
+			# if self.time_start != 0:
+			# 	if self.output_previous[-1,3] < 0:
+			# 		self.output_previous[-1,3] = self.output_previous[-2,3]
+			# 	RR_sciantix[0] = self.output_previous[-1,3]
+			
 
-			# print(dFR_dt)
-			# print(dFR_dt_sciantix)
+			# FR_interpolated_low = FR_interpolated * (0.98)
+			# FR_interpolated_up = FR_interpolated * (1.02)
+			# dFR_dt_mean =np.average(dFR_dt[~np.isnan(dFR_dt)])
+			# error_related = np.zeros_like(FR_sciantix)
 			# if self.time_start == 0:
-			# 	if max(FR_interpolated) != 0 and max(abs(dFR_dt)) !=0:
-			# 		error = -sum(abs(FR_interpolated - FR_sciantix))/max(FR_interpolated)-sum(abs(error_derivative))/max(abs(dFR_dt))
-			# 	elif max(FR_interpolated) == 0 and max(abs(dFR_dt)) !=0:
-			# 		error = -1*len(FR_interpolated)-sum(abs(error_derivative))/max(abs(dFR_dt))
-			# 	elif max(FR_interpolated) != 0 and max(abs(dFR_dt)) ==0:
-			# 		error = -sum(abs(FR_interpolated - FR_sciantix))/max(FR_interpolated)-1 * len(dFR_dt)
-			# 	else:
-			# 		error = - 2 * len(FR_interpolated)
-
+			# 	for i in range(len(FR_sciantix)):
+			# 		if FR_sciantix[i] > FR_interpolated_up[i] or FR_sciantix[i] < FR_interpolated_low[i]:
+			# 			error_related[i] = 10 * abs((FR_sciantix[i] - FR_interpolated[i]))
+			# 		elif FR_sciantix[i] < FR_interpolated_up[i] and FR_sciantix[i] > FR_interpolated_low[i]:
+			# 			if max(dFR_dt_sciantix) - min(dFR_dt_sciantix) > 0.05*dFR_dt_mean:
+			# 				error_related[i] = 5 * abs(FR_interpolated[i] - FR_sciantix[i])
+			# 			else:
+			# 				error_related[i] = abs(FR_interpolated[i] - FR_sciantix[i])
+			# 	error = -sum(error_related)
 			
-
+			
 			# else:
-			# 	if FR_interpolated[-1] != 0 and dFR_dt_last != 0:
-			# 		error = -(abs(FR_interpolated[-1])-(FR_sciantix[-1]))/FR_interpolated[-1] - (abs(error_derivative_last))/dFR_dt_last
-			# 	elif FR_interpolated[-1] == 0 and dFR_dt_last !=0:
-			# 		error = -1 - (abs(error_derivative_last))/dFR_dt_last
-			# 	elif FR_interpolated[-1] != 0 and dFR_dt_last == 0:
-			# 		error = -(abs(FR_interpolated[-1])-(FR_sciantix[-1]))/FR_interpolated[-1] - 1
-			# 	else:
-			# 		error = -2
-
-
-			# if max(FR_interpolated) != 0 and max(abs(dFR_dt)) !=0:
-			# 	error = -sum(abs(FR_interpolated - FR_sciantix))/max(FR_interpolated) *max(abs(dFR_dt))/max(FR_interpolated) -sum(abs(error_derivative))/max(abs(dFR_dt))
-			# elif max(FR_interpolated) == 0 and max(abs(dFR_dt)) !=0:
-			# 	if max(FR_sciantix) != 0:
-
-			# 		error = -1*len(FR_interpolated)*max(abs(dFR_dt))/max(FR_interpolated)-sum(abs(error_derivative))/max(abs(dFR_dt))
-			# 	else:
-			# 		error = -sum(abs(error_derivative))/max(abs(dFR_dt))
-			# elif max(FR_interpolated) != 0 and max(abs(dFR_dt)) ==0:
-			# 	if max(dFR_dt_sciantix) != 0:
-			# 		error = -sum(abs(FR_interpolated - FR_sciantix))/max(FR_interpolated)*max(abs(dFR_dt))/max(FR_interpolated) - 1 * len(dFR_dt)
-			# 	else:
-			# 		error = -sum(abs(FR_interpolated - FR_sciantix))/max(FR_interpolated)*max(abs(dFR_dt))/max(FR_interpolated)
-			# else: #max(FR_interpolated) == 0 and max(abs(dFR_dt)) ==0:
-			# 	if max(FR_sciantix) != 0 and max(dFR_dt_sciantix) != 0:
-			# 		error = - 2 * len(FR_interpolated)
-			# 	elif max(FR_sciantix) == 0 and max(dFR_dt_sciantix) == 0:
-			# 		error = 0
-			# 	else:
-			# 		error = -1 * len(FR_interpolated)
-
-
-			# if max(FR_interpolated) != 0 and max(abs(dFR_dt)) !=0:
-			# 	if max(abs((FR_interpolated - FR_sciantix )/max(FR_interpolated)))> 0.05:
-			# 		error = -max(abs(FR_interpolated - FR_sciantix))/max(FR_interpolated) *max(abs(dFR_dt))/max(FR_interpolated) 
-			# 	else:
-			# 		error = -max(abs(error_derivative))/max(abs(dFR_dt))
-			# elif max(FR_interpolated) == 0 and max(abs(dFR_dt)) !=0:
-			# 	if max(FR_sciantix) != 0:
-			# 		error = -1*len(FR_interpolated)*max(abs(dFR_dt))/max(FR_interpolated)-sum(abs(error_derivative))/max(abs(dFR_dt))
-			# 	else:
-			# 		error = -sum(abs(error_derivative))/max(abs(dFR_dt))
-			# elif max(FR_interpolated) != 0 and max(abs(dFR_dt)) ==0:
-			# 	if max(dFR_dt_sciantix) != 0:
-			# 		error = -sum(abs(FR_interpolated - FR_sciantix))/max(FR_interpolated)*max(abs(dFR_dt))/max(FR_interpolated) - 1 * len(dFR_dt)
-			# 	else:
-			# 		error = -sum(abs(FR_interpolated - FR_sciantix))/max(FR_interpolated)*max(abs(dFR_dt))/max(FR_interpolated)
-			# else: #max(FR_interpolated) == 0 and max(abs(dFR_dt)) ==0:
-			# 	if max(FR_sciantix) != 0 and max(dFR_dt_sciantix) != 0:
-			# 		error = - 2 * len(FR_interpolated)
-			# 	elif max(FR_sciantix) == 0 and max(dFR_dt_sciantix) == 0:
-			# 		error = 0
-			# 	else:
-			# 		error = -1 * len(FR_interpolated)
-			
-			if RR_sciantix[-1] < 0:
-				RR_sciantix[-1] = RR_sciantix[-2]
-			if self.time_start != 0:
-				if self.output_previous[-1,3] < 0:
-					self.output_previous[-1,3] = self.output_previous[-2,3]
-				RR_sciantix[0] = self.output_previous[-1,3]
-			
-
-			FR_interpolated_low = FR_interpolated * (0.98)
-			FR_interpolated_up = FR_interpolated * (1.02)
-			dFR_dt_mean =np.average(dFR_dt[~np.isnan(dFR_dt)])
-			error_related = np.zeros_like(FR_sciantix)
-			if self.time_start == 0:
-				for i in range(len(FR_sciantix)):
-					if FR_sciantix[i] > FR_interpolated_up[i] or FR_sciantix[i] < FR_interpolated_low[i]:
-						error_related[i] = 10 * abs((FR_sciantix[i] - FR_interpolated[i]))
-					elif FR_sciantix[i] < FR_interpolated_up[i] and FR_sciantix[i] > FR_interpolated_low[i]:
-						if max(dFR_dt_sciantix) - min(dFR_dt_sciantix) > 0.05*dFR_dt_mean:
-							error_related[i] = 5 * abs(FR_interpolated[i] - FR_sciantix[i])
-						else:
-							error_related[i] = abs(FR_interpolated[i] - FR_sciantix[i])
-				error = -sum(error_related)
-			
-			
-			else:
-				if FR_sciantix[-1] > FR_interpolated[-1] and dFR_dt_sciantix[-1] > dFR_dt[~np.isnan(dFR_dt)][-1]:
-					error = -15 * abs((FR_sciantix[-1] - FR_interpolated[-1]))
+			# 	if FR_sciantix[-1] > FR_interpolated[-1] and dFR_dt_sciantix[-1] > dFR_dt[~np.isnan(dFR_dt)][-1]:
+			# 		error = -15 * abs((FR_sciantix[-1] - FR_interpolated[-1]))
 				
-				elif FR_sciantix[-1] > FR_interpolated[-1] and dFR_dt_sciantix[-1] < dFR_dt[~np.isnan(dFR_dt)][-1]:
-					error = -10 * abs((FR_sciantix[-1] - FR_interpolated[-1]))
+			# 	elif FR_sciantix[-1] > FR_interpolated[-1] and dFR_dt_sciantix[-1] < dFR_dt[~np.isnan(dFR_dt)][-1]:
+			# 		error = -10 * abs((FR_sciantix[-1] - FR_interpolated[-1]))
 
-				elif FR_sciantix[-1] <= FR_interpolated[-1]:
-					if FR_sciantix[-1] > FR_interpolated_low[-1]:
-						if (dFR_dt_sciantix[1] - self.output_previous[-1,3]*3600/Helium_total)/(self.output_previous[-1,3]*3600/Helium_total )> 0.05:
-							error = -15 * abs(FR_interpolated[-1] - FR_sciantix[-1])
-						else:
-							error= -abs(FR_interpolated[-1] - FR_sciantix[-1])
-					elif FR_sciantix[-1] < FR_interpolated_low[-1]:
-						error = -10 * abs((FR_sciantix[-1] - FR_interpolated[-1]))
+			# 	elif FR_sciantix[-1] <= FR_interpolated[-1]:
+			# 		if FR_sciantix[-1] > FR_interpolated_low[-1]:
+			# 			if (dFR_dt_sciantix[1] - self.output_previous[-1,3]*3600/Helium_total)/(self.output_previous[-1,3]*3600/Helium_total )> 0.05:
+			# 				error = -12 * abs(FR_interpolated[-1] - FR_sciantix[-1])
+			# 			else:
+			# 				error= -abs(FR_interpolated[-1] - FR_sciantix[-1])
+			# 		elif FR_sciantix[-1] < FR_interpolated_low[-1]:
+			# 			error = -10 * abs((FR_sciantix[-1] - FR_interpolated[-1]))
 
 
 			
 			return error
 		
-		
-		# pbounds = self.BO_bounds
-		# optimizer = BayesianOptimization(
-		# 	f = costFunction, 
-		# 	pbounds  = pbounds,
-		# 	verbose = 1,
-		# 	allow_duplicate_points=True
-		# 	)
-
-		# acq_function = UtilityFunction(kind = 'ucb')
 
 
-		# optimizer.maximize(
-		# 	init_points=20,
-		# 	n_iter=100,
-		# 	acquisition_function = acq_function
-		# )
+		interpolated_data = np.genfromtxt("interpolated_data.txt",dtype = 'float',delimiter='\t')
+		FR_interpolated = interpolated_data[:,0]
 
 
+
+		error_limit = - 0.1 * np.average(FR_interpolated)
 		#####
 		# domain reduction
 		#####
-		pbounds = self.BO_bounds
-		bounds_transformer = SequentialDomainReductionTransformer(minimum_window=0.01)
-		optimizer = BayesianOptimization(
-			f = costFunction, 
-			pbounds  = pbounds,
-			verbose = 2,
-			bounds_transformer = bounds_transformer,
-			allow_duplicate_points=True
-			)
+		current_error = -0.15 * np.average(FR_interpolated)
+		bound_size = np.zeros(len(self.sf_selected))
+		for i in range(len(self.sf_selected)):
+			bound_size[i] = new_bounds[self.sf_selected[i]][1] - new_bounds[self.sf_selected[i]][0]
 
-		acq_function = UtilityFunction(kind = 'ucb')
-		optimizer.maximize(
-			init_points=20,
-			n_iter=100,
-			acquisition_function = acq_function
-		)
+
+		while np.round((current_error),2) < error_limit:
+			# pbounds = self.BO_bounds
+			minimum_window = 0.01
+			bounds_transformer = SequentialDomainReductionTransformer(minimum_window=minimum_window)
+			self.bounds = {}
+			if min(bound_size) > minimum_window:
+				optimizer = BayesianOptimization(
+					f = costFunction, 
+					# pbounds  = pbounds,
+					pbounds = new_bounds,
+					verbose = 2,
+					bounds_transformer = bounds_transformer,
+					allow_duplicate_points=True
+					)
+				acq_function = UtilityFunction(kind = 'ucb')
+				optimizer.maximize(
+					init_points=20,
+					n_iter=100,
+					acquisition_function = acq_function
+				)
+				bounds = bounds_transformer.bounds[-1]
+				for i in range(len(self.sf_selected)):
+					self.bounds[self.sf_selected[i]] = bounds[i,:]
+				
+			else:
+				optimizer = BayesianOptimization(
+					f = costFunction, 
+					# pbounds  = pbounds,
+					pbounds = new_bounds,
+					verbose = 2,
+					allow_duplicate_points=True
+					)
+				acq_function = UtilityFunction(kind = 'ucb')
+				optimizer.maximize(
+					init_points=20,
+					n_iter=100,
+					acquisition_function = acq_function
+				)
+				# bounds = np.zeros((len(self.sf_selected, 2)))
+				# for i in range(len(self.sf_selected)):
+				# 	bounds[i,:] = new_bounds[self.sf_selected[i]]
+				self.bounds =  new_bounds
+			
+			current_error = optimizer.max['target']
+		
+
 
 		for i, res in enumerate(optimizer.res):
 			print("Iteration {}: \n\t{}".format(i, res))
@@ -963,6 +920,34 @@ error_optimized = np.zeros((number_of_interval+1,1))
 results_data = np.empty((number_of_interval+2,sf_number+2),dtype = object)
 final_data = np.empty((0,4))
 final_data_interpolated = np.empty((0,4))
+bounds_information = np.zeros((number_of_interval+1,2*sf_number))
+
+sf_selected = np.array([
+	"helium diffusivity pre exponential",
+	"helium diffusivity activation energy",
+	"henry constant pre exponential",
+	"henry constant activation energy"])
+new_bounds = {}
+
+for i in range(len(sf_selected)):
+	if sf_selected[i] == "helium diffusivity pre exponential":
+		new_bounds[sf_selected[i]] = np.array([np.log(0.05), np.log(19.9)])
+
+	elif sf_selected[i] == "helium diffusivity activation energy":
+		# self.sf_selected_bounds[0,i] = 0.835
+		# self.sf_selected_bounds[1,i] = 1.2
+		new_bounds[sf_selected[i]] = np.array([0.835, 1.2])
+	elif sf_selected[i] == "henry constant pre exponential":
+		# self.sf_selected_bounds[0,i] = np.log(0.0627)
+		# self.sf_selected_bounds[1,i] = np.log(16.09)
+		new_bounds[sf_selected[i]] = np.array([np.log(0.0627),np.log(16.09)])
+	elif sf_selected[i] == "henry constant activation energy":
+		# self.sf_selected_bounds[0,i] = 0.431
+		# self.sf_selected_bounds[1,i] = 1.55
+		new_bounds[sf_selected[i]] = np.array([0.431,1.55])
+	else:
+		new_bounds[sf_selected[i]] = np.array([0.0,float('inf')])
+
 
 for i in range(1,number_of_interval+1):
 	Talip1320 = optimization()
@@ -979,10 +964,14 @@ for i in range(1,number_of_interval+1):
 		"henry constant pre exponential",
 		"henry constant activation energy"
 	)
-	
+	new_bounds = Talip1320.BO_bounds
 	setInputOutput = inputOutput()
 
-	Talip1320.optimization(setInputOutput)
+	Talip1320.optimization(setInputOutput, new_bounds)
+	
+	for m in range(len(Talip1320.sf_selected)):
+		bounds_information[0,2*m] = Talip1320.BO_bounds[Talip1320.sf_selected[m]][0]
+		bounds_information[0,2*m+1] = Talip1320.BO_bounds[Talip1320.sf_selected[m]][1]
 
 	results_data[i+1,1:] = Talip1320.optimization_results
 	results_data[i+1,0] = time_points[i][0]
@@ -995,6 +984,22 @@ for i in range(1,number_of_interval+1):
 	with open(f"optimization_online.txt", 'w') as file:
 		for row in results_data:
 			line = "\t".join(map(str, row))
+			file.write(line + "\n")
+
+	if abs(results_data[i+1,(sf_number+1)]) <= abs(results_data[i, (sf_number+1)]):
+		new_bounds = Talip1320.bounds
+	else:
+		for k in range(len(Talip1320.sf_selected)):
+			new_bounds[Talip1320.sf_selected[k]][0] = new_bounds[Talip1320.sf_selected[k]][0]/1.1
+			new_bounds[Talip1320.sf_selected[k]][1] = new_bounds[Talip1320.sf_selected[k]][0]/0.9
+
+	for j in range(len(Talip1320.sf_selected)):
+		bounds_information[i,2*j] = new_bounds[Talip1320.sf_selected[j]][0]
+		bounds_information[i,2*j+1] = new_bounds[Talip1320.sf_selected[j]][1]
+
+	with open('bounds_information.txt','w') as file:
+		for row in bounds_information:
+			line = "\t".join(map(str,row))
 			file.write(line + "\n")
 
 	final_data = np.vstack((final_data, Talip1320.final_data))
