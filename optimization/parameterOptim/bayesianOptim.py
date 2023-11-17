@@ -514,6 +514,7 @@ class optimization():
 			self.temperature = temperature_sciantix
 			
 			# writing 
+
 			data = np.column_stack((self.FR, self.RR))
 			with open("interpolated_data.txt",'w') as file:
 				for i, row in enumerate(data):
@@ -589,17 +590,18 @@ class optimization():
 		
 
 
-		interpolated_data = np.genfromtxt("interpolated_data.txt",dtype = 'float',delimiter='\t')
-		FR_interpolated = interpolated_data[:,0]
+		
 
 
 
-		error_limit = - 0.1 * np.average(FR_interpolated)
+		
 		#####
 		# domain reduction
 		#####
-		current_error = -0.15 * np.average(FR_interpolated)
+		error_limit = - 0.1 
+		current_error = -0.15 
 		bound_size = np.zeros(len(self.sf_selected))
+
 		for i in range(len(self.sf_selected)):
 			bound_size[i] = new_bounds[self.sf_selected[i]][1] - new_bounds[self.sf_selected[i]][0]
 
@@ -646,13 +648,15 @@ class optimization():
 				# for i in range(len(self.sf_selected)):
 				# 	bounds[i,:] = new_bounds[self.sf_selected[i]]
 				self.bounds =  new_bounds
-			
+			interpolated_data = np.genfromtxt("interpolated_data.txt",dtype = 'float',delimiter='\t')
+			FR_interpolated = interpolated_data[:,0]
+			error_limit = 0.1 * np.average(FR_interpolated)
 			current_error = optimizer.max['target']
 		
 
 
-		for i, res in enumerate(optimizer.res):
-			print("Iteration {}: \n\t{}".format(i, res))
+		# for i, res in enumerate(optimizer.res):
+			# print("Iteration {}: \n\t{}".format(i, res))
 
 		self.optimization_results = np.zeros(len(self.sf_selected)+1)
 		for i in range(len(self.sf_selected)):
