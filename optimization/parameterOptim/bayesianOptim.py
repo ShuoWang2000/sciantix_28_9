@@ -605,8 +605,8 @@ class optimization():
 		for i in range(len(self.sf_selected)):
 			bound_size[i] = new_bounds[self.sf_selected[i]][1] - new_bounds[self.sf_selected[i]][0]
 
-
-		while np.round((current_error),2) < error_limit:
+		current_iteration = 0
+		while np.round((current_error),2) < error_limit and current_iteration < 5:
 			# pbounds = self.BO_bounds
 			minimum_window = 0.01
 			bounds_transformer = SequentialDomainReductionTransformer(minimum_window=minimum_window)
@@ -648,6 +648,7 @@ class optimization():
 				# for i in range(len(self.sf_selected)):
 				# 	bounds[i,:] = new_bounds[self.sf_selected[i]]
 				self.bounds =  new_bounds
+			current_iteration = current_iteration + 1
 			interpolated_data = np.genfromtxt("interpolated_data.txt",dtype = 'float',delimiter='\t')
 			FR_interpolated = interpolated_data[:,0]
 			current_error = optimizer.max['target']
