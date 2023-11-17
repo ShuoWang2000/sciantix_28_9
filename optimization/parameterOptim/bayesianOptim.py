@@ -623,7 +623,7 @@ class optimization():
 				acq_function = UtilityFunction(kind = 'ucb')
 				optimizer.maximize(
 					init_points=20,
-					n_iter=100,
+					n_iter=30,
 					acquisition_function = acq_function
 				)
 				bounds = bounds_transformer.bounds[-1]
@@ -641,7 +641,7 @@ class optimization():
 				acq_function = UtilityFunction(kind = 'ucb')
 				optimizer.maximize(
 					init_points=20,
-					n_iter=100,
+					n_iter=30,
 					acquisition_function = acq_function
 				)
 				# bounds = np.zeros((len(self.sf_selected, 2)))
@@ -650,8 +650,12 @@ class optimization():
 				self.bounds =  new_bounds
 			interpolated_data = np.genfromtxt("interpolated_data.txt",dtype = 'float',delimiter='\t')
 			FR_interpolated = interpolated_data[:,0]
-			error_limit = 0.1 * np.average(FR_interpolated)
 			current_error = optimizer.max['target']
+			if self.time_start == 0:
+				error_limit = current_error - 1
+			else:
+				error_limit = 0.1 * np.average(FR_interpolated)
+			print(error_limit, current_error)
 		
 
 
@@ -935,22 +939,24 @@ new_bounds = {}
 
 for i in range(len(sf_selected)):
 	if sf_selected[i] == "helium diffusivity pre exponential":
-		new_bounds[sf_selected[i]] = np.array([np.log(0.05), np.log(19.9)])
+		new_bounds[sf_selected[i]] = (np.log(0.05), np.log(19.9))
 
 	elif sf_selected[i] == "helium diffusivity activation energy":
 		# self.sf_selected_bounds[0,i] = 0.835
 		# self.sf_selected_bounds[1,i] = 1.2
-		new_bounds[sf_selected[i]] = np.array([0.835, 1.2])
+		new_bounds[sf_selected[i]] = (0.835, 1.2)
 	elif sf_selected[i] == "henry constant pre exponential":
 		# self.sf_selected_bounds[0,i] = np.log(0.0627)
 		# self.sf_selected_bounds[1,i] = np.log(16.09)
-		new_bounds[sf_selected[i]] = np.array([np.log(0.0627),np.log(16.09)])
+		new_bounds[sf_selected[i]] = (np.log(0.0627),np.log(16.09))
 	elif sf_selected[i] == "henry constant activation energy":
 		# self.sf_selected_bounds[0,i] = 0.431
 		# self.sf_selected_bounds[1,i] = 1.55
-		new_bounds[sf_selected[i]] = np.array([0.431,1.55])
+		new_bounds[sf_selected[i]] = (0.431,1.55)
 	else:
-		new_bounds[sf_selected[i]] = np.array([0.0,float('inf')])
+		new_bounds[sf_selected[i]] = (0.0,float('inf'))
+# print(new_bounds)
+initial_bounds = new_bounds
 
 
 for i in range(1,number_of_interval+1):
@@ -958,7 +964,7 @@ for i in range(1,number_of_interval+1):
 	Talip1320.setCase(ref_case)
 	
 	Talip1320.setStartEndTime(time_points[i-1][0],time_points[i][0])
-
+	# print(time_points[i-1][0])
 	Talip1320.setInitialConditions()
 	Talip1320.setScalingFactors(
 		# "resolution rate",
@@ -984,7 +990,7 @@ for i in range(1,number_of_interval+1):
 	results_data[0,1:(sf_number+1)] = Talip1320.sf_selected
 	results_data[0,(sf_number+1)] = "error"
 	results_data[1,:] = [0, 1.0, 1.0, 1.0, 1.0, 0]
-
+	# print(time_points[i-1][0])
 	with open(f"optimization_online.txt", 'w') as file:
 		for row in results_data:
 			line = "\t".join(map(str, row))
@@ -994,8 +1000,12 @@ for i in range(1,number_of_interval+1):
 		new_bounds = Talip1320.bounds
 	else:
 		for k in range(len(Talip1320.sf_selected)):
-			new_bounds[Talip1320.sf_selected[k]][0] = new_bounds[Talip1320.sf_selected[k]][0]/1.1
-			new_bounds[Talip1320.sf_selected[k]][1] = new_bounds[Talip1320.sf_selected[k]][0]/0.9
+			# print(new_bounds[Talip1320.sf_selected[k]][0])
+			bound_low = max((new_bounds[Talip1320.sf_selected[k]][0])/1.1, initial_bounds[Talip1320.sf_selected[k]][0])
+			bound_up = min((new_bounds[Talip1320.sf_selected[k]][0])/0.9, initial_bounds[Talip1320.sf_selected[k]][1])
+			# new_bounds[Talip1320.sf_selected[k]][0] = bound_low
+			# new_bounds[Talip1320.sf_selected[k]][1] = bound_up
+			new_bounds[Talip1320.sf_selected[k]] = (bound_low, bound_up)
 
 	for j in range(len(Talip1320.sf_selected)):
 		bounds_information[i,2*j] = new_bounds[Talip1320.sf_selected[j]][0]
