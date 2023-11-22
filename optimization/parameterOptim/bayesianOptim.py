@@ -1011,8 +1011,14 @@ for i in range(1,number_of_interval+1):
 	else:
 		for k in range(len(Talip1320.sf_selected)):
 			# print(new_bounds[Talip1320.sf_selected[k]][0])
-			bound_low = max((new_bounds[Talip1320.sf_selected[k]][0])* 0.9, initial_bounds[Talip1320.sf_selected[k]][0])
-			bound_up = min((new_bounds[Talip1320.sf_selected[k]][1]) * 1.1, initial_bounds[Talip1320.sf_selected[k]][1])
+			if new_bounds[Talip1320.sf_selected[k]][0] < 0:
+				bound_low = max((new_bounds[Talip1320.sf_selected[k]][0])* 1.1, initial_bounds[Talip1320.sf_selected[k]][0])
+			else:
+				bound_low = max((new_bounds[Talip1320.sf_selected[k]][0])* 0.9, initial_bounds[Talip1320.sf_selected[k]][0])
+			if new_bounds[Talip1320.sf_selected[k]][1] > 0:
+				bound_up = min((new_bounds[Talip1320.sf_selected[k]][1]) * 1.1, initial_bounds[Talip1320.sf_selected[k]][1])
+			else:
+				bound_up = min((new_bounds[Talip1320.sf_selected[k]][1]) * 0.9, initial_bounds[Talip1320.sf_selected[k]][1])
 			# new_bounds[Talip1320.sf_selected[k]][0] = bound_low
 			# new_bounds[Talip1320.sf_selected[k]][1] = bound_up
 			new_bounds[Talip1320.sf_selected[k]] = (bound_low, bound_up)
