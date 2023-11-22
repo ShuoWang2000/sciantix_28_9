@@ -506,13 +506,13 @@ class optimization():
 					dFR_dtdt[i] = (dFR_dt[i] - dFR_dt[i-1])/(time_sciantix[i]-time_sciantix[i-1])
 			
 			dFR_dt = moving_average(dFR_dt,20)
-
+			FR_interpolated = moving_average(FR_interpolated, 10)
+			
 			self.FR = FR_interpolated
 			self.RR = RR_interpolated
 			self.time = time_sciantix
 			# print(self.time)
 			self.temperature = temperature_sciantix
-			
 			# writing 
 
 			data = np.column_stack((self.FR, self.RR))
