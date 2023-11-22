@@ -523,8 +523,17 @@ class optimization():
 						file.write("\n")
 
 			# error function
-			error =  - max(abs(FR_sciantix - FR_interpolated))
-
+			error_related = np.zeros_like(FR_interpolated)
+			# error =  - max(abs(FR_sciantix - FR_interpolated))
+			for i in range(len(FR_interpolated)):
+				if FR_interpolated[i] != 0:
+					error_related[i] = abs(FR_sciantix[i] - FR_interpolated[i])/FR_interpolated[i]
+				else:
+					if FR_sciantix[i] == 0:
+						error_related[i] = 1
+					else:
+						error_related[i] = 0
+			error = - sum(error_related)
 			# error function
 			# # error_slop = -max(abs(dFR_dt - dFR_dt_sciantix))
 			# print(dFR_dt)
