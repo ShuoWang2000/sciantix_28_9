@@ -664,7 +664,8 @@ class optimization():
 			if self.time_start == 0:
 				error_limit = current_error - 1
 			else:
-				error_limit = - 0.1 * np.average(FR_interpolated)
+				# error_limit = - 0.1 * np.average(FR_interpolated)
+				error_limit = - 0.05 * len(FR_interpolated)
 			print(error_limit, current_error)
 		
 
