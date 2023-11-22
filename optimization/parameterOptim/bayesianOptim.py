@@ -946,29 +946,28 @@ sf_selected = np.array([
 	"helium diffusivity activation energy",
 	"henry constant pre exponential",
 	"henry constant activation energy"])
-new_bounds = {}
+initial_bounds = {}
 
 for i in range(len(sf_selected)):
 	if sf_selected[i] == "helium diffusivity pre exponential":
-		new_bounds[sf_selected[i]] = (np.log(0.05), np.log(19.9))
+		initial_bounds[sf_selected[i]] = (np.log(0.05), np.log(19.9))
 
 	elif sf_selected[i] == "helium diffusivity activation energy":
 		# self.sf_selected_bounds[0,i] = 0.835
 		# self.sf_selected_bounds[1,i] = 1.2
-		new_bounds[sf_selected[i]] = (0.835, 1.2)
+		initial_bounds[sf_selected[i]] = (0.835, 1.2)
 	elif sf_selected[i] == "henry constant pre exponential":
 		# self.sf_selected_bounds[0,i] = np.log(0.0627)
 		# self.sf_selected_bounds[1,i] = np.log(16.09)
-		new_bounds[sf_selected[i]] = (np.log(0.0627),np.log(16.09))
+		initial_bounds[sf_selected[i]] = (np.log(0.0627),np.log(16.09))
 	elif sf_selected[i] == "henry constant activation energy":
 		# self.sf_selected_bounds[0,i] = 0.431
 		# self.sf_selected_bounds[1,i] = 1.55
-		new_bounds[sf_selected[i]] = (0.431,1.55)
+		initial_bounds[sf_selected[i]] = (0.431,1.55)
 	else:
-		new_bounds[sf_selected[i]] = (0.0,float('inf'))
+		initial_bounds[sf_selected[i]] = (0.0,float('inf'))
 # print(new_bounds)
-initial_bounds = new_bounds
-
+new_bounds = initial_bounds
 
 for i in range(1,number_of_interval+1):
 	Talip1320 = optimization()
@@ -1012,8 +1011,8 @@ for i in range(1,number_of_interval+1):
 	else:
 		for k in range(len(Talip1320.sf_selected)):
 			# print(new_bounds[Talip1320.sf_selected[k]][0])
-			bound_low = max((new_bounds[Talip1320.sf_selected[k]][0])/1.1, initial_bounds[Talip1320.sf_selected[k]][0])
-			bound_up = min((new_bounds[Talip1320.sf_selected[k]][1])/0.9, initial_bounds[Talip1320.sf_selected[k]][1])
+			bound_low = max((new_bounds[Talip1320.sf_selected[k]][0])* 0.9, initial_bounds[Talip1320.sf_selected[k]][0])
+			bound_up = min((new_bounds[Talip1320.sf_selected[k]][1]) * 1.1, initial_bounds[Talip1320.sf_selected[k]][1])
 			# new_bounds[Talip1320.sf_selected[k]][0] = bound_low
 			# new_bounds[Talip1320.sf_selected[k]][1] = bound_up
 			new_bounds[Talip1320.sf_selected[k]] = (bound_low, bound_up)
