@@ -1021,7 +1021,7 @@ for i in range(2,number_of_interval+1):
 
 			bound_low = max( new_bounds[Talip1320.sf_selected[k]][0] - 0.1* abs(new_bounds[Talip1320.sf_selected[k]][0]),  initial_bounds[Talip1320.sf_selected[k]][0])
 			bound_up = min( new_bounds[Talip1320.sf_selected[k]][1] + 0.1* abs(new_bounds[Talip1320.sf_selected[k]][1]),  initial_bounds[Talip1320.sf_selected[k]][1])
-
+			print(f"bound_low:{bound_low}, bound_up:{bound_up}")
 			new_bounds[Talip1320.sf_selected[k]] = (bound_low, bound_up)
 		
 		Talip1320 = optimization()
