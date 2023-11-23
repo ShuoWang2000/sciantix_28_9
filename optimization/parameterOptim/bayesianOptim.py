@@ -984,7 +984,6 @@ for i in range(1,number_of_interval+1):
 		"henry constant pre exponential",
 		"henry constant activation energy"
 	)
-	new_bounds = Talip1320.BO_bounds
 	setInputOutput = inputOutput()
 
 	Talip1320.optimization(setInputOutput, new_bounds)
