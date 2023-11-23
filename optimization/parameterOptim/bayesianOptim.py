@@ -670,8 +670,8 @@ class optimization():
 		
 
 
-		# for i, res in enumerate(optimizer.res):
-			# print("Iteration {}: \n\t{}".format(i, res))
+		for i, res in enumerate(optimizer.res):
+			print("Iteration {}: \n\t{}".format(i, res))
 
 		self.optimization_results = np.zeros(len(self.sf_selected)+1)
 		for i in range(len(self.sf_selected)):
