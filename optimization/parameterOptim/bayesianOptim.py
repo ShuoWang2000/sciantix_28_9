@@ -86,10 +86,10 @@ class inputOutput():
 		with open("input_scaling_factors.txt",'w') as file:
 			for key, value in scaling_factors.items():
 				if(f'{key}' == 'helium diffusivity pre exponential'):
-					file.write(f'{np.exp(value)}\n')
+					file.write(f'{(value)}\n')
 					file.write(f'# scaling factor - {key}\n')
 				elif(f'{key}' == 'henry constant pre exponential'):
-					file.write(f'{np.exp(value)}\n')
+					file.write(f'{(value)}\n')
 					file.write(f'# scaling factor - {key}\n')
 
 				else:
@@ -275,14 +275,14 @@ class optimization():
 		self.sf_selected_bounds = np.zeros([2,len(self.sf_selected_initial_value)])
 		for i in range(len(self.sf_selected)):
 			if self.sf_selected[i] == "helium diffusivity pre exponential":
-				self.sf_selected_bounds[0,i] = np.log(0.05)
-				self.sf_selected_bounds[1,i] = np.log(19.9)
+				self.sf_selected_bounds[0,i] = (0.05)
+				self.sf_selected_bounds[1,i] = (19.9)
 			elif self.sf_selected[i] == "helium diffusivity activation energy":
 				self.sf_selected_bounds[0,i] = 0.835
 				self.sf_selected_bounds[1,i] = 1.2
 			elif self.sf_selected[i] == "henry constant pre exponential":
-				self.sf_selected_bounds[0,i] = np.log(0.0627)
-				self.sf_selected_bounds[1,i] = np.log(16.09)
+				self.sf_selected_bounds[0,i] = (0.0627)
+				self.sf_selected_bounds[1,i] = (16.09)
 			elif self.sf_selected[i] == "henry constant activation energy":
 				self.sf_selected_bounds[0,i] = 0.431
 				self.sf_selected_bounds[1,i] = 1.55
@@ -680,9 +680,9 @@ class optimization():
 		for i in range(len(self.sf_selected)):
 			self.scaling_factors[self.sf_selected[i]] = optimizer.max['params'][self.sf_selected[i]]
 			if self.sf_selected[i] == "helium diffusivity pre exponential":
-				self.optimization_results[i] = np.exp(optimizer.max['params'][self.sf_selected[i]])
+				self.optimization_results[i] = (optimizer.max['params'][self.sf_selected[i]])
 			elif self.sf_selected[i] == "henry constant pre exponential":
-				self.optimization_results[i] = np.exp(optimizer.max['params'][self.sf_selected[i]])
+				self.optimization_results[i] = (optimizer.max['params'][self.sf_selected[i]])
 			else:
 				self.optimization_results[i] = optimizer.max['params'][self.sf_selected[i]]
 			print(f"{self.sf_selected[i]}:{self.optimization_results[i]}")
@@ -694,10 +694,10 @@ class optimization():
 		with open("input_scaling_factors.txt",'w') as file:
 			for key, value in self.scaling_factors.items():
 				if(f'{key}' == 'helium diffusivity pre exponential'):
-					file.write(f'{np.exp(value)}\n')
+					file.write(f'{(value)}\n')
 					file.write(f'# scaling factor - {key}\n')
 				elif(f'{key}' == 'henry constant pre exponential'):
-					file.write(f'{np.exp(value)}\n')
+					file.write(f'{(value)}\n')
 					file.write(f'# scaling factor - {key}\n')
 				else:
 					file.write(f'{value}\n')
@@ -953,7 +953,7 @@ initial_bounds = {}
 
 for i in range(len(sf_selected)):
 	if sf_selected[i] == "helium diffusivity pre exponential":
-		initial_bounds[sf_selected[i]] = (np.log(0.05), np.log(19.9))
+		initial_bounds[sf_selected[i]] = ((0.05), (19.9))
 
 	elif sf_selected[i] == "helium diffusivity activation energy":
 		# self.sf_selected_bounds[0,i] = 0.835
@@ -962,7 +962,7 @@ for i in range(len(sf_selected)):
 	elif sf_selected[i] == "henry constant pre exponential":
 		# self.sf_selected_bounds[0,i] = np.log(0.0627)
 		# self.sf_selected_bounds[1,i] = np.log(16.09)
-		initial_bounds[sf_selected[i]] = (np.log(0.0627),np.log(16.09))
+		initial_bounds[sf_selected[i]] = ((0.0627),(16.09))
 	elif sf_selected[i] == "henry constant activation energy":
 		# self.sf_selected_bounds[0,i] = 0.431
 		# self.sf_selected_bounds[1,i] = 1.55
@@ -1018,7 +1018,7 @@ for i in range(2,number_of_interval+1):
 	results_data[i+1,1:] = Talip1320.optimization_results
 	results_data[i+1,0] = time_points[i][0]
 	print(abs(results_data[i+1,(sf_number+1)]),abs(results_data[i, (sf_number+1)]))
-	while abs(results_data[i+1,(sf_number+1)]) > abs(results_data[i, (sf_number+1)]):
+	while abs(results_data[i+1,(sf_number+1)]) > 1.2 * abs(results_data[i, (sf_number+1)]):
 
 		for k in range(len(Talip1320.sf_selected)):
 
