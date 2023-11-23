@@ -985,7 +985,11 @@ for i in range(1,number_of_interval+1):
 		"henry constant activation energy"
 	)
 	setInputOutput = inputOutput()
-
+	results_data[0,0] = "time"
+	results_data[0,1:(sf_number+1)] = Talip1320.sf_selected
+	results_data[0,(sf_number+1)] = "error"
+	results_data[1,:] = [0, 1.0, 1.0, 1.0, 1.0, 0]
+	
 	Talip1320.optimization(setInputOutput, new_bounds)
 	
 	for m in range(len(Talip1320.sf_selected)):
@@ -995,20 +999,7 @@ for i in range(1,number_of_interval+1):
 
 	results_data[i+1,1:] = Talip1320.optimization_results
 	results_data[i+1,0] = time_points[i][0]
-
-	results_data[0,0] = "time"
-	results_data[0,1:(sf_number+1)] = Talip1320.sf_selected
-	results_data[0,(sf_number+1)] = "error"
-	results_data[1,:] = [0, 1.0, 1.0, 1.0, 1.0, 0]
-	# print(time_points[i-1][0])
-	with open(f"optimization_online.txt", 'w') as file:
-		for row in results_data:
-			line = "\t".join(map(str, row))
-			file.write(line + "\n")
-
-	if abs(results_data[i+1,(sf_number+1)]) <= abs(results_data[i, (sf_number+1)]):
-		new_bounds = Talip1320.bounds
-	else:
+	while abs(results_data[i+1,(sf_number+1)]) > abs(results_data[i, (sf_number+1)]):
 		for k in range(len(Talip1320.sf_selected)):
 			# print(new_bounds[Talip1320.sf_selected[k]][0])
 			if new_bounds[Talip1320.sf_selected[k]][0] < 0:
@@ -1022,7 +1013,15 @@ for i in range(1,number_of_interval+1):
 			# new_bounds[Talip1320.sf_selected[k]][0] = bound_low
 			# new_bounds[Talip1320.sf_selected[k]][1] = bound_up
 			new_bounds[Talip1320.sf_selected[k]] = (bound_low, bound_up)
-
+		Talip1320.optimization(setInputOutput, new_bounds)
+		results_data[i+1,1:] = Talip1320.optimization_results
+		print(f"previous time interval error:{abs(results_data[i, (sf_number+1)])}, current: {abs(results_data[i+1,(sf_number+1)])}")
+	
+	new_bounds = Talip1320.bounds
+	with open(f"optimization_online.txt", 'w') as file:
+		for row in results_data:
+			line = "\t".join(map(str, row))
+			file.write(line + "\n")
 	for j in range(len(Talip1320.sf_selected)):
 		index_bound = np.where(bounds_information == Talip1320.sf_selected[j])[1][0]
 		bounds_information[i+1,index_bound] = new_bounds[Talip1320.sf_selected[j]][0]
