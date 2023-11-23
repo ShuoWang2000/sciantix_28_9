@@ -939,7 +939,7 @@ error_optimized = np.zeros((number_of_interval+1,1))
 results_data = np.empty((number_of_interval+2,sf_number+2),dtype = object)
 final_data = np.empty((0,4))
 final_data_interpolated = np.empty((0,4))
-bounds_information = np.zeros((number_of_interval+1,2*sf_number))
+bounds_information = np.zeros((number_of_interval+2,2*sf_number))
 
 sf_selected = np.array([
 	"helium diffusivity pre exponential",
@@ -990,8 +990,9 @@ for i in range(1,number_of_interval+1):
 	Talip1320.optimization(setInputOutput, new_bounds)
 	
 	for m in range(len(Talip1320.sf_selected)):
-		bounds_information[0,2*m] = Talip1320.BO_bounds[Talip1320.sf_selected[m]][0]
-		bounds_information[0,2*m+1] = Talip1320.BO_bounds[Talip1320.sf_selected[m]][1]
+		bounds_information[0, 2 * m] = Talip1320.sf_selected[m]
+		bounds_information[1,2*m] = Talip1320.BO_bounds[Talip1320.sf_selected[m]][0]
+		bounds_information[1,2*m+1] = Talip1320.BO_bounds[Talip1320.sf_selected[m]][1]
 
 	results_data[i+1,1:] = Talip1320.optimization_results
 	results_data[i+1,0] = time_points[i][0]
@@ -1024,8 +1025,9 @@ for i in range(1,number_of_interval+1):
 			new_bounds[Talip1320.sf_selected[k]] = (bound_low, bound_up)
 
 	for j in range(len(Talip1320.sf_selected)):
-		bounds_information[i,2*j] = new_bounds[Talip1320.sf_selected[j]][0]
-		bounds_information[i,2*j+1] = new_bounds[Talip1320.sf_selected[j]][1]
+		index_bound = np.where(bounds_information == Talip1320.sf_selected[j])[1][0]
+		bounds_information[i,index_bound] = new_bounds[Talip1320.sf_selected[j]][0]
+		bounds_information[i,index_bound + 1] = new_bounds[Talip1320.sf_selected[j]][1]
 
 	with open('bounds_information.txt','w') as file:
 		for row in bounds_information:
