@@ -1009,15 +1009,6 @@ for i in range(2,number_of_interval+1):
 		sf_selected[2],
 		sf_selected[3]
 	)
-	# Talip1320.setScalingFactors(
-	# 	# "resolution rate",
-	# 	# "trapping rate",
-		
-	# 	"helium diffusivity pre exponential",
-	# 	"helium diffusivity activation energy",
-	# 	"henry constant pre exponential",
-	# 	"henry constant activation energy"
-	# )
 	setInputOutput = inputOutput()
 	Talip1320.optimization(setInputOutput, new_bounds)
 	
@@ -1038,13 +1029,12 @@ for i in range(2,number_of_interval+1):
 		# print(time_points[i-1][0])
 		Talip1320.setInitialConditions()
 		Talip1320.setScalingFactors(
-			# "resolution rate",
-			# "trapping rate",
-			"helium diffusivity pre exponential",
-			"helium diffusivity activation energy",
-			"henry constant pre exponential",
-			"henry constant activation energy"
+			sf_selected[0],
+			sf_selected[1],
+			sf_selected[2],
+			sf_selected[3]
 		)
+		setInputOutput = inputOutput()
 		Talip1320.optimization(setInputOutput, new_bounds)
 		results_data[i+1,1:] = Talip1320.optimization_results
 		print(f"previous time interval error:{abs(results_data[i, (sf_number+1)])}, current: {abs(results_data[i+1,(sf_number+1)])}")
