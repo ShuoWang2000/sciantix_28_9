@@ -636,9 +636,12 @@ class optimization():
 					acquisition_function = acq_function
 				)
 				bounds = bounds_transformer.bounds[-1]
-				for i in range(len(self.sf_selected)):
-					self.bounds[self.sf_selected[i]] = bounds[i,:]
-				
+				# for i in range(len(self.sf_selected)):
+				# 	self.bounds[self.sf_selected[i]] = bounds[i,:]
+				self.bounds[self.sf_selected[0]] = bounds[1,:]
+				self.bounds[self.sf_selected[1]] = bounds[0,:]
+				self.bounds[self.sf_selected[2]] = bounds[3,:]
+				self.bounds[self.sf_selected[3]] = bounds[2,:]				
 			else:
 				optimizer = BayesianOptimization(
 					f = costFunction, 
