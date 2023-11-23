@@ -1025,17 +1025,10 @@ for i in range(2,number_of_interval+1):
 	results_data[i+1,0] = time_points[i][0]
 	while abs(results_data[i+1,(sf_number+1)]) > abs(results_data[i, (sf_number+1)]):
 		for k in range(len(Talip1320.sf_selected)):
-			# print(new_bounds[Talip1320.sf_selected[k]][0])
-			if new_bounds[Talip1320.sf_selected[k]][0] < 0:
-				bound_low = max((new_bounds[Talip1320.sf_selected[k]][0])* 1.1, initial_bounds[Talip1320.sf_selected[k]][0])
-			else:
-				bound_low = max((new_bounds[Talip1320.sf_selected[k]][0])* 0.9, initial_bounds[Talip1320.sf_selected[k]][0])
-			if new_bounds[Talip1320.sf_selected[k]][1] > 0:
-				bound_up = min((new_bounds[Talip1320.sf_selected[k]][1]) * 1.1, initial_bounds[Talip1320.sf_selected[k]][1])
-			else:
-				bound_up = min((new_bounds[Talip1320.sf_selected[k]][1]) * 0.9, initial_bounds[Talip1320.sf_selected[k]][1])
-			# new_bounds[Talip1320.sf_selected[k]][0] = bound_low
-			# new_bounds[Talip1320.sf_selected[k]][1] = bound_up
+
+			bound_low = max( new_bounds[Talip1320.sf_selected[k]][0] - 0.1* abs(new_bounds[Talip1320.sf_selected[k]][0]),  initial_bounds[Talip1320.sf_selected[k]][0])
+			bound_up = min( new_bounds[Talip1320.sf_selected[k]][1] + 0.1* abs(new_bounds[Talip1320.sf_selected[k]][1]),  initial_bounds[Talip1320.sf_selected[k]][1])
+
 			new_bounds[Talip1320.sf_selected[k]] = (bound_low, bound_up)
 		
 		Talip1320 = optimization()
