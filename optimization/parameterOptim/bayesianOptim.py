@@ -633,15 +633,19 @@ class optimization():
 				optimizer.maximize(
 					init_points=20,
 					n_iter=30,
-					acquisition_function = acq_function
+					# acquisition_function = acq_function
+					acq_function = 'sampling'
 				)
 				bounds = bounds_transformer.bounds[-1]
-				# for i in range(len(self.sf_selected)):
-				# 	self.bounds[self.sf_selected[i]] = bounds[i,:]
-				self.bounds[self.sf_selected[0]] = bounds[1,:]
-				self.bounds[self.sf_selected[1]] = bounds[0,:]
-				self.bounds[self.sf_selected[2]] = bounds[3,:]
-				self.bounds[self.sf_selected[3]] = bounds[2,:]				
+				# here use sorted because the domain_reduction sorted the bounds
+				# see bayes_opt/target_space.py line 56 - 61
+				sf_selected_sorted = sorted(self.sf_selected)
+				for m in range(len(sf_selected_sorted)):
+					self.bounds[sf_selected_sorted[m]] = bounds[m,:]
+				# self.bounds[self.sf_selected[0]] = bounds[1,:]
+				# self.bounds[self.sf_selected[1]] = bounds[0,:]
+				# self.bounds[self.sf_selected[2]] = bounds[3,:]
+				# self.bounds[self.sf_selected[3]] = bounds[2,:]				
 			else:
 				optimizer = BayesianOptimization(
 					f = costFunction, 
