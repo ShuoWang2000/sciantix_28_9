@@ -1019,7 +1019,8 @@ for i in range(2,number_of_interval+1):
 	results_data[i+1,1:] = Talip1320.optimization_results
 	results_data[i+1,0] = time_points[i][0]
 	print(abs(results_data[i+1,(sf_number+1)]),abs(results_data[i, (sf_number+1)]))
-	while abs(results_data[i+1,(sf_number+1)]) > 1.2 * abs(results_data[i, (sf_number+1)]):
+	count = 0
+	while abs(results_data[i+1,(sf_number+1)]) > 1.2 * abs(results_data[i, (sf_number+1)]) and count < 3:
 
 		for k in range(len(Talip1320.sf_selected)):
 
@@ -1044,7 +1045,7 @@ for i in range(2,number_of_interval+1):
 		Talip1320.optimization(setInputOutput, new_bounds)
 		results_data[i+1,1:] = Talip1320.optimization_results
 		print(f"previous time interval error:{abs(results_data[i, (sf_number+1)])}, current: {abs(results_data[i+1,(sf_number+1)])}")
-	
+		count = count + 1
 	new_bounds = Talip1320.bounds
 	with open(f"optimization_online.txt", 'w') as file:
 		for row in results_data:
