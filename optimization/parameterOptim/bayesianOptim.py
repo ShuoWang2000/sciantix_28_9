@@ -629,8 +629,7 @@ class optimization():
 					bounds_transformer = bounds_transformer,
 					allow_duplicate_points=True
 					)
-				# acq_function = UtilityFunction(kind = 'ucb')
-				acq_function =  UtilityFunction(kind = 'sampling')
+				acq_function = UtilityFunction(kind = 'ucb')
 				optimizer.maximize(
 					init_points=20,
 					n_iter=30,
