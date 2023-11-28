@@ -615,7 +615,7 @@ class optimization():
 			bound_size[i] = new_bounds[self.sf_selected[i]][1] - new_bounds[self.sf_selected[i]][0]
 
 		current_iteration = 0
-		while np.round((current_error),2) < error_limit and current_iteration < 5:
+		while np.round((current_error),2) < error_limit and current_iteration < 3:
 			# pbounds = self.BO_bounds
 			minimum_window = 0.01
 			bounds_transformer = SequentialDomainReductionTransformer(minimum_window=minimum_window)
@@ -642,10 +642,7 @@ class optimization():
 				sf_selected_sorted = sorted(self.sf_selected)
 				for m in range(len(sf_selected_sorted)):
 					self.bounds[sf_selected_sorted[m]] = bounds[m,:]
-				# self.bounds[self.sf_selected[0]] = bounds[1,:]
-				# self.bounds[self.sf_selected[1]] = bounds[0,:]
-				# self.bounds[self.sf_selected[2]] = bounds[3,:]
-				# self.bounds[self.sf_selected[3]] = bounds[2,:]				
+			
 			else:
 				optimizer = BayesianOptimization(
 					f = costFunction, 
@@ -1026,8 +1023,8 @@ for i in range(2,number_of_interval+1):
 
 		for k in range(len(Talip1320.sf_selected)):
 
-			bound_low = max( new_bounds[Talip1320.sf_selected[k]][0] - 0.1* abs(new_bounds[Talip1320.sf_selected[k]][0]),  initial_bounds[Talip1320.sf_selected[k]][0])
-			bound_up = min( new_bounds[Talip1320.sf_selected[k]][1] + 0.1* abs(new_bounds[Talip1320.sf_selected[k]][1]),  initial_bounds[Talip1320.sf_selected[k]][1])
+			bound_low = max( new_bounds[Talip1320.sf_selected[k]][0] - 0.5* abs(new_bounds[Talip1320.sf_selected[k]][0]),  initial_bounds[Talip1320.sf_selected[k]][0])
+			bound_up = min( new_bounds[Talip1320.sf_selected[k]][1] + 0.5* abs(new_bounds[Talip1320.sf_selected[k]][1]),  initial_bounds[Talip1320.sf_selected[k]][1])
 			print(f"bound_low:{bound_low}, bound_up:{bound_up}")
 			new_bounds[Talip1320.sf_selected[k]] = (bound_low, bound_up)
 		
