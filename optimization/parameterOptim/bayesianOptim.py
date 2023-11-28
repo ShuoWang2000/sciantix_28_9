@@ -629,12 +629,13 @@ class optimization():
 					bounds_transformer = bounds_transformer,
 					allow_duplicate_points=True
 					)
-				acq_function = UtilityFunction(kind = 'ucb')
+				# acq_function = UtilityFunction(kind = 'ucb')
+				acq_function =  UtilityFunction(kind = 'sampling')
 				optimizer.maximize(
 					init_points=20,
 					n_iter=30,
-					# acquisition_function = acq_function
-					acq_function = 'sampling'
+					acquisition_function = acq_function
+					
 				)
 				bounds = bounds_transformer.bounds[-1]
 				# here use sorted because the domain_reduction sorted the bounds
