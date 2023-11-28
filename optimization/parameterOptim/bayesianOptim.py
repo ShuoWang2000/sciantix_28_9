@@ -1000,6 +1000,13 @@ Talip1320.optimization(setInputOutput, new_bounds)
 results_data[2,1:] = Talip1320.optimization_results
 results_data[2,0] = time_points[1][0]
 
+new_bounds = Talip1320.bounds
+for m in range(len(sf_selected)):
+	index_bound = np.where(bounds_information == Talip1320.sf_selected[m])[1][0]
+	bounds_information[2,index_bound] = new_bounds[Talip1320.sf_selected[m]][0]
+	bounds_information[2,index_bound+1] = new_bounds[Talip1320.sf_selected[m]][1]
+
+
 for i in range(2,number_of_interval+1):
 	Talip1320 = optimization()
 	Talip1320.setCase(ref_case)
