@@ -21,7 +21,7 @@ def main():
     keys = np.array([key for key in params_info.keys()])
     initial_values = np.array([info['mu'] for info in params_info.values()])
     stds = np.array([info['sigma'] for info in params_info.values()])
-    # trues = np.array([info['true'] for info in params_info.values()])
+
     
     time_points = np.linspace(0, max(model.time_exp), 4)
     # Perform Bayesian Calibration

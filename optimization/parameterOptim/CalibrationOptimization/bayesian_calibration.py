@@ -7,6 +7,7 @@ from user_model import UserModel
 import os
 from itertools import product
 import shutil
+import copy
 
 
 class BayesianCalibration:
@@ -38,10 +39,8 @@ class BayesianCalibration:
 
         self.params_combination = product(*[info['range'] for info in self.params_info.values()])
 
-        
     def bayesian_calibration(self, model:UserModel):
         posteriors = [self.joint_prior.flatten()]
-        # print(posteriors[-1])
         max_params_over_time = [[info['mu'] for info in self.params_info.values()]]
         destination_name = 'Bayesian_calibration'
         if not os.path.exists(destination_name):
@@ -51,20 +50,15 @@ class BayesianCalibration:
             os.makedirs(destination_name)
         for i in range(1,len(self.time_point)):
             observed = model._exp(time_point=self.time_point[i])
-            # print(observed)
             model_values = []
-            for combination in self.params_combination:
+            params_combination = copy.deepcopy(self.params_combination)
+            for combination in params_combination:
 
                 params = {key:value for key, value in zip(self.params_grid.keys(),combination)}
                 model_value = model._sciantix(destination_name,0,self.time_point[i],params)[2]
-                # print(model_value)
+
                 model_values.append(model_value)
-                # print(model_values)
-                # likelihood = norm.pdf(observed[1], loc = model_values, scale = observed[2])
-                # print(likelihood)
-            # model_values = np.array(model_values)
-            # model_values_reshape = model_values.reshape()
-            
+
             likelihood = norm.pdf(observed[1], loc = model_values, scale = observed[2])
             posterior = self.bayesian_update(posteriors[-1], likelihood)
             posteriors.append(posterior)
@@ -79,7 +73,6 @@ class BayesianCalibration:
         plt.figure(figsize=(12,6))
         for i, key in enumerate(self.params_info.keys()):
             plt.plot(self.time_point, [params[i] for params in self.max_params_over_time], label = f"Evolution of {key}", marker = 'o')
-            # plt.plot([0,1], [model.sf_true[i], model.sf_true[i]], label = model.sfs[i])
         plt.xlabel('Time')
         plt.ylabel('Parameter Value')
         plt.title('Evolution of Parameters in Maximum Posterior Probability')
