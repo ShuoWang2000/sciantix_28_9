@@ -1,0 +1,290 @@
+import numpy as np
+import os
+import shutil
+from contextlib import contextmanager
+import copy
+import subprocess
+
+class UserModel:
+    """
+    Represents the user model for the simulation. This class generates time-series data
+    using a mathematical model with specified parameters.
+
+    """
+    def __init__(
+        self,
+        case_name:str = None,
+        params: np.ndarray = None,
+        params_initial_values:np.ndarray = None,
+        params_stds:np.ndarray = None,
+
+    ) -> None:
+        params_info = {
+            params[i]:{
+                'mu': params_initial_values[i],
+                'sigma': params_stds[i],
+                'bound': (params_initial_values[i] - 3 * params_stds[i], params_initial_values[i] + 3*params_stds[i])
+            } for i in range(len(params))
+        }
+
+        self.params_info = {key:params_info[key] for key in sorted(params_info)}
+
+        self.code_container = os.getcwd() # ../parameterOptim/CalibrationOptimization
+        self.case_folder_container = os.path.dirname(self.code_container) # ../parameterOptim
+        self.case_folder_path = os.path.join(self.case_folder_container, case_name) # ../parameterOptim/caseName
+        # print(self.case_folder_path)
+        # print(self.code_container)
+        # original files path
+        self.input_settings_path = os.path.join(self.case_folder_path, 'input_settings.txt')
+        self.input_initial_conditions_path = os.path.join(self.case_folder_path, 'input_initial_conditions.txt')
+        self.input_scaling_factor_path = os.path.join(self.case_folder_path, 'input_scaling_factors.txt')
+        self.input_history_path = os.path.join(self.case_folder_path, 'input_history.txt')
+        self.sciantix_path = os.path.join('/mnt/e/DeskTop/course in polimi/Thesis/sciantix_cioniiiiii/sciantix_28_9/bin','sciantix.x')
+        # print(self.sciantix_path)
+        with self.change_directory(self.case_folder_path, self.code_container):
+            exp_fr_data  = np.genfromtxt("Talip2014_release_data.txt",dtype = 'float',delimiter='\t')
+            exp_fr_data_sorted = exp_fr_data[exp_fr_data[:,0].argsort()]
+            exp_rr_data = np.genfromtxt("Talip2014_rrate_data.txt",dtype = 'float',delimiter='\t')
+            history = np.genfromtxt("input_history.txt",dtype = 'float', delimiter='\t')
+
+            self.scaling_factors = {}
+            with open("input_scaling_factors.txt", 'r') as file:
+                lines = file.readlines()
+
+            for i in range(0, len(lines), 2):  # Step of 2 to process pairs of lines
+                try:
+                    value = float(lines[i].strip())
+                    name = lines[i + 1].strip().replace("# scaling factor - ", "")
+                    self.scaling_factors[name] = value
+                except ValueError as e:
+                    print(f"Error processing line {i}: {e}")
+                except IndexError:
+                    print(f"Missing name for value at line {i}")
+
+        self.time_exp  = exp_fr_data_sorted[:,0]
+        self.FR_exp = self.moving_average(exp_fr_data_sorted[:,1],100)
+        self.FR_exp_std = self.dynamic_std(exp_fr_data_sorted[:,1],100)
+        self.temperature_exp = exp_rr_data[:,0]
+        self.RR_exp = self.moving_average(exp_rr_data[:,1],5)
+        
+        self.history_original = history
+        self.time_history_original = self.history_original[:,0]
+        self.temperature_history_original = self.history_original[:,1]
+
+    def _independent_sciantix_folder(self, destination, t_start, t_end):
+        """
+        Build a standard sciantix folder with newest sciantix.x and the input files for selected case.
+        Return the folder's path
+        """
+
+        forlder_name = f'from_{t_start}_to_{t_end}'
+
+        with self.change_directory(destination, self.code_container):
+            if not os.path.exists(forlder_name):
+                os.makedirs(forlder_name)
+            else:
+                shutil.rmtree(forlder_name)
+                os.makedirs(forlder_name)
+            os.chdir(forlder_name)
+            shutil.copy(self.input_settings_path, os.getcwd())
+            shutil.copy(self.input_scaling_factor_path, os.getcwd())
+            shutil.copy(self.input_initial_conditions_path, os.getcwd())
+            shutil.copy(self.sciantix_path, os.getcwd())
+            shutil.copy(self.input_history_path, os.getcwd())
+        return os.path.join(destination, forlder_name)
+    
+    
+
+    def _sciantix(self, destination, t_start, t_end, params:dict):
+        """
+        return(np.array):
+            *t_end
+            *temperature @ t_end
+            *FR @ t_end
+            *RR @ t_end
+        """
+        scaling_factors = copy.deepcopy(self.scaling_factors)
+        history_original = copy.deepcopy(self.history_original)
+        t_0 = np.round(t_start,3)
+        t_1 = np.round(t_end,3)
+        history_info = self._filter_and_interpolate_matrix(history_original, t_0, t_1)
+        sciantix_folder_path = self._independent_sciantix_folder(destination, t_0, t_1)
+        
+        with self.change_directory(sciantix_folder_path, self.code_container):
+            for key, value in params.items():
+                if 'pre exponential' in key:
+                    params[key] = np.exp(value)
+            scaling_factors.update(params)
+            with open('input_scaling_factors.txt','w') as file:
+                for key, value in scaling_factors.items():
+                        file.write(f'{value}\n')
+                        file.write(f'# scaling factor - {key}\n')	
+            with open('input_history.txt', 'w') as file:
+                file.writelines('\t'.join(str(item) for item in row) + '\n' for row in history_info[:-1])
+                file.write('\t'.join(str(item) for item in history_info[-1]))
+
+            subprocess.run(['./sciantix.x'])
+            variables = ["Time (h)","Temperature (K)","He fractional release (/)", "He release rate (at/m3 s)"]
+            output_data = self.get_selected_variables_value_from_output_last_line(variables, 'output.txt')
+        return output_data
+    
+    def _exp(self, time_point):
+        """
+        return:
+            *time_point
+            *FR_interpolated @ time_point
+            *FR_interpolated_std @ time_point
+        """
+        FR_exp_info = np.vstack((self.time_exp, self.FR_exp, self.FR_exp_std)).T
+
+        clostest_point = self.find_closest_points(FR_exp_info, time_point)
+        interpolate_FR_info = self.linear_interpolate(*clostest_point, time_point)
+            
+        return interpolate_FR_info
+    
+    def calculate_error(self, destination_folder, t_start, t_end, params:dict):
+        output_sciantix = self._sciantix(destination_folder, t_start, t_end,params)
+        FR_interpolated_info = self._exp(output_sciantix[0])
+        error = np.sum(np.abs(output_sciantix[2] - FR_interpolated_info[1])/np.abs(FR_interpolated_info[1]))
+        return error
+
+    @staticmethod
+    @contextmanager
+    def change_directory(destination_directory, original_directory):
+        try:
+            os.chdir(destination_directory)
+            yield
+        finally:
+            os.chdir(original_directory)
+    
+    @staticmethod
+    def get_selected_variables_value_from_output(variable_selected, source_file):
+        with open(source_file, 'r') as file:
+            header = file.readline().strip().split('\t')
+            lines = [line for line in file if line.strip()]
+
+        variable_positions = [header.index(var) for var in variable_selected if var in header]
+        # Optional: Warn about missing variables
+        missing_vars = [var for var in variable_selected if var not in header]
+        if missing_vars:
+            print(f"Warning: The following variables were not found in the file and will be ignored: {missing_vars}")
+
+        data = np.genfromtxt(lines, dtype='str', delimiter='\t')
+        variable_selected_value = data[:, variable_positions].astype(float)
+        
+        return variable_selected_value
+    
+    @staticmethod
+    def get_selected_variables_value_from_output_last_line(variable_selected, source_file):
+        with open(source_file, 'r') as file:
+            header = file.readline().strip().split('\t')
+            
+            for last_non_empty_line in reversed(file.readlines()):
+                if last_non_empty_line.strip():
+                    break
+
+        variable_positions = [header.index(var) for var in variable_selected if var in header]
+        
+        # Optional: Warn about missing variables
+        missing_vars = [var for var in variable_selected if var not in header]
+        if missing_vars:
+            print(f"Warning: The following variables were not found in the file and will be ignored: {missing_vars}")
+
+        # Use only the last non-empty line to create the data array
+        data = np.genfromtxt([last_non_empty_line], dtype='str', delimiter='\t')
+        variable_selected_value = data[variable_positions].astype(float)
+        
+        return variable_selected_value
+
+
+
+
+    @staticmethod
+    def linear_interpolate(point1, point2, target_time):
+        """
+        Perform linear interpolation between two data points.
+
+        Args:
+        point1 (list): The data point before the target time. It should be in the format [time, value1, value2, ...].
+        point2 (list): The data point after the target time, in the same format as point1.
+        target_time (int or float): The time at which we want to interpolate the values.
+
+        Returns:
+        list: Interpolated data point at the target time, in the format [target_time, interpolated_value1, interpolated_value2, ...].
+        """
+        ratio = (target_time - point1[0]) / (point2[0] - point1[0])
+        return [target_time] + [p1 + ratio * (p2 - p1) for p1, p2 in zip(point1[1:], point2[1:])]
+
+    @staticmethod
+    def find_closest_points(matrix, target_time):
+        """
+        Find the two points in the matrix that are closest to the target time, one before and one after.
+
+        Args:
+        matrix (list of lists): The original data matrix.
+        target_time (int or float): The target time to find closest points for.
+
+        Returns:
+        tuple: A tuple containing the two closest points (each a list), or None if no such points exist.
+        """
+        for i in range(len(matrix) - 1):
+            if matrix[i][0] <= target_time <= matrix[i + 1][0]:
+                return matrix[i], matrix[i + 1]
+        return None
+    
+
+    def _filter_and_interpolate_matrix(self ,matrix, start_time, end_time):
+        """
+        Create a new matrix filtered by start and end times, including interpolated values at these times.
+
+        Args:
+        matrix (list of lists): The original data matrix.
+        start_time (int or float): The start time for the new matrix.
+        end_time (int or float): The end time for the new matrix.
+
+        Returns:
+        list of lists: The new matrix with rows between and including the interpolated start and end times.
+        """
+        new_matrix = []
+
+        # Find points for interpolation at start and end times
+        start_points = self.find_closest_points(matrix, start_time)
+        end_points = self.find_closest_points(matrix, end_time)
+
+        # Interpolate and add start row
+        if start_points:
+            new_matrix.append(self.linear_interpolate(*start_points, start_time)) # use * to unpacke the tuple output from linear_interpolate
+
+        # Add in-between rows
+        for row in matrix:
+            if start_time < row[0] < end_time:
+                new_matrix.append(row)
+
+        # Interpolate and add end row
+        if end_points:
+            new_matrix.append(self.linear_interpolate(*end_points, end_time))
+        new_matrix = np.array(new_matrix)
+        return new_matrix
+
+    
+    @staticmethod
+    def moving_average(data, window_size):
+        half_window = window_size // 2
+        smoothed_data = np.convolve(data, np.ones(window_size) / window_size, mode='same')
+
+        for i in range(half_window):
+            smoothed_data[i] = np.mean(data[:i+half_window+1])
+            smoothed_data[-i-1] = np.mean(data[-(i+half_window+1):])
+        return smoothed_data
+    
+    @staticmethod
+    def dynamic_std(data, window_size):
+        half_window = window_size // 2
+        dynamic_std = np.full(data.shape, np.nan)
+
+        for i in range(len(data)):
+            start = max(0, i - half_window)
+            end = min(len(data), i + half_window + 1)
+            dynamic_std[i] = np.std(data[start:end], ddof=1)  # ddof=1 for sample standard deviation
+
+        return dynamic_std

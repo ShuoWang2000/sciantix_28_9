@@ -295,6 +295,7 @@ class optimization():
 		for i in range(len(self.sf_selected)):
 			self.BO_bounds[self.sf_selected[i]] = (self.sf_selected_bounds[0,i], self.sf_selected_bounds[1,i])
 
+
 	def optimization(self,inputOutput, new_bounds):
 		
 		inputOutput.writeInputHistory(self.history_original, self.time_start, self.time_end)
@@ -914,6 +915,49 @@ def do_plot(Talip1320):
 	plt.show()
 	
 	os.chdir("../..")
+
+
+def domain_reducction(Talip1320, minimum_window):
+	# contraction parameters
+    gamma_pan = 1.0
+    gamma_osc = 0.7
+	# zooming parameter
+    eta = 0.9
+
+    # INITIALIZE
+
+    #from dictionary to array:
+    global_bounds = np.array(
+        [item[1] for item in sorted(Talip1320.Bo_bounds.items(), key = lambda x: x[0])],
+        dtype = float
+    )
+    original_bounds = global_bounds
+    bounds = [original_bounds]
+    previous_optimal = np.mean(global_bounds, axis = 1)
+    current_optimal = np.mean(global_bounds, axis = 1)
+    r = global_bounds[:,1] - global_bounds[:,0]
+    previous_d = 2.0 * \
+        (current_optimal - previous_optimal) / r
+    current_d = 2.0 * \
+        (current_optimal - previous_optimal) / r
+    c = current_d * previous_d # oscillation index
+    c_hat = np.sqrt(np.abs(c)) * np.sign(c) # normalize
+
+    gamma = 0.5 * (gamma_pan * (1.0 + c_hat) +
+				   gamma_osc * (1.0 - c_hat))
+	
+    contraction_rate = eta + \
+        np.abs(current_d) * (gamma - eta)
+	
+    r = contraction_rate * r
+	
+
+
+    # UPDATE
+    
+
+
+
 
 # ONLINE optimization
 #####################
