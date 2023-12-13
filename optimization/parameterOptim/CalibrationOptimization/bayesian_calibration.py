@@ -67,7 +67,9 @@ class BayesianCalibration:
             reshaped_posterior = posterior.reshape(*[len(self.params_info[key]['range']) for key in self.params_info.keys()])
             print(f'reshaped_posterior: {reshaped_posterior}')
             max_index = np.unravel_index(np.argmax(reshaped_posterior), reshaped_posterior.shape)
+            print(max_index)
             max_params = [self.params_info[key]['range'][max_index[i]] for i, key in enumerate(self.params_info.keys())]
+            print(max_params)
             max_params_over_time.append(max_params)
             
             params_at_max_prob = np.array(max_params_over_time)
