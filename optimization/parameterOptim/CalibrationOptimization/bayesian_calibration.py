@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib
-matplotlib.use('TkAgg')
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from scipy.stats import norm
 from user_model import UserModel
@@ -67,8 +67,13 @@ class BayesianCalibration:
             max_index = np.unravel_index(np.argmax(reshaped_posterior), reshaped_posterior.shape)
             max_params = [self.params_info[key]['range'][max_index[i]] for i, key in enumerate(self.params_info.keys())]
             max_params_over_time.append(max_params)
+            print(self.time_point[i])
+            params_at_max_prob = np.array(max_params_over_time)
+            with open('params_at_max_prob.txt', 'w') as file:
+                file.writelines('\t'.join(str(item) for item in row) + '\n' for row in  params_at_max_prob[:-1])
+                file.write('\t'.join(str(item) for item in params_at_max_prob[-1]))
         self.max_params_over_time = max_params_over_time
-
+        
     def do_plot(self, model:UserModel):
         plt.figure(figsize=(12,6))
         for i, key in enumerate(self.params_info.keys()):

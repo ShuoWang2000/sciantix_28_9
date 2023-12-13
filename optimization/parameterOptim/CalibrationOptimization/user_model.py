@@ -39,7 +39,7 @@ class UserModel:
         self.input_initial_conditions_path = os.path.join(self.case_folder_path, 'input_initial_conditions.txt')
         self.input_scaling_factor_path = os.path.join(self.case_folder_path, 'input_scaling_factors.txt')
         self.input_history_path = os.path.join(self.case_folder_path, 'input_history.txt')
-        self.sciantix_path = os.path.join('/mnt/e/DeskTop/course in polimi/Thesis/sciantix_cioniiiiii/sciantix_28_9/bin','sciantix.x')
+        self.sciantix_path = os.path.join('/home/posh/sciantix_28_9/bin','sciantix.x')
         # print(self.sciantix_path)
         with self.change_directory(self.case_folder_path, self.code_container):
             exp_fr_data  = np.genfromtxt("Talip2014_release_data.txt",dtype = 'float',delimiter='\t')

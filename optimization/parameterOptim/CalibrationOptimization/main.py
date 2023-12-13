@@ -5,7 +5,7 @@ from optimization import Optimization
 from domain_reduction import DomainReduction
 from bayesian_calibration import BayesianCalibration
 import matplotlib
-matplotlib.use('TkAgg')
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 def main():
@@ -23,11 +23,11 @@ def main():
     stds = np.array([info['sigma'] for info in params_info.values()])
 
     
-    time_points = np.linspace(0, max(model.time_exp), 4)
+    time_points = np.linspace(0, max(model.time_exp), 21)
     # Perform Bayesian Calibration
-    bc = BayesianCalibration(keys=keys,mean_values=initial_values, stds=stds,sampling_number=11, time_point=time_points)
+    bc = BayesianCalibration(keys=keys,mean_values=initial_values, stds=stds,sampling_number=21, time_point=time_points)
     bc.bayesian_calibration(model)
-    bc.do_plot(model)
+    # bc.do_plot(model)
     # Set up the Optimization
 #     optim_online = Optimization(kind='online', method='som', keys=keys, initial_values=initial_values, stds=stds)
 #     optim_offline = Optimization(kind='offline', method='som', keys=keys, initial_values=initial_values, stds=stds)
