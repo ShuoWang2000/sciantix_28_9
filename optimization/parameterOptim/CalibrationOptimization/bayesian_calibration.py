@@ -49,6 +49,7 @@ class BayesianCalibration:
             shutil.rmtree(destination_name)
             os.makedirs(destination_name)
         for i in range(1,len(self.time_point)):
+            print(f"current time: {self.time_point[i]}")
             observed = model._exp(time_point=self.time_point[i])
             model_values = []
             params_combination = copy.deepcopy(self.params_combination)
@@ -64,17 +65,18 @@ class BayesianCalibration:
             posteriors.append(posterior)
 
             reshaped_posterior = posterior.reshape(*[len(self.params_info[key]['range']) for key in self.params_info.keys()])
+            print(f'reshaped_posterior: {reshaped_posterior}')
             max_index = np.unravel_index(np.argmax(reshaped_posterior), reshaped_posterior.shape)
             max_params = [self.params_info[key]['range'][max_index[i]] for i, key in enumerate(self.params_info.keys())]
             max_params_over_time.append(max_params)
-            print(self.time_point[i])
+            
             params_at_max_prob = np.array(max_params_over_time)
             with open('params_at_max_prob.txt', 'w') as file:
                 file.writelines('\t'.join(str(item) for item in row) + '\n' for row in  params_at_max_prob[:-1])
                 file.write('\t'.join(str(item) for item in params_at_max_prob[-1]))
         self.max_params_over_time = max_params_over_time
         
-    def do_plot(self, model:UserModel):
+    def do_plot(self):
         plt.figure(figsize=(12,6))
         for i, key in enumerate(self.params_info.keys()):
             plt.plot(self.time_point, [params[i] for params in self.max_params_over_time], label = f"Evolution of {key}", marker = 'o')
