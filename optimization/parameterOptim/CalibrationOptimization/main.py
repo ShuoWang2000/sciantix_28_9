@@ -12,7 +12,7 @@ def main():
 
     # Initialize the UserModel with appropriate parameters
     model = UserModel(
-        case_name='test_Talip2014_1600K',
+        case_name='test_Talip2014_1320K',
         params=np.array(['helium diffusivity pre exponential', 'helium diffusivity activation energy']),
         params_initial_values=np.array([0,1.0]),
         params_stds=np.array([1.526,0.1])
