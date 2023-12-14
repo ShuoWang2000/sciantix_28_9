@@ -65,10 +65,20 @@ class Optimization:
         if not os.path.exists(destination_name):
             os.makedirs(destination_name)
         else:
-            shutil.rmtree(destination_name)
-            os.makedirs(destination_name)
+            os.chdir(destination_name)
 
-        self.sciantix_optim_path = model._independent_sciantix_folder(destination_name, previous_x, current_x)
+        self.optim_container_path = os.getcwd()
+
+        previous_optim_path = 0
+        for folder_name in os.listdir(self.optim_container_path):
+            folder_path = os.path.join(self.optim_container_path, folder_name)
+            if os.path.isdir(folder_path) and f'to_{np.round(previous_x,3)}' in folder_name:
+                previous_optim_path = folder_path
+                break
+
+
+
+        self.sciantix_optim_path = model._independent_sciantix_folder(self.optim_container_path,previous_optim_path, previous_x, current_x)
 
         cost_function = self._create_cost_function(model)
 

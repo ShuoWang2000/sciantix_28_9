@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib
-matplotlib.use('TkAgg')
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from scipy.stats import norm
 from user_model import UserModel
@@ -49,14 +49,13 @@ class BayesianCalibration:
             os.makedirs(destination_name)
         initial_values = np.array([info['mu'] for info in self.params_info.values()])
         optim_folder = 0
+        optimized_params = [[info['mu'] for info in self.params_info.values()]]
         for i in range(1,len(self.time_point)):
             if self.online == True:
                 t_0 = self.time_point[i-1]
             else:
                 t_0 = 0
             sciantix_folder_path = model._independent_sciantix_folder(destination_name, optim_folder,t_0, self.time_point[i])
-            op.optimize(model,t_0,self.time_point[i],initial_values,op.bounds_dr)
-            optim_folder = op.optim_folder
             observed = model._exp(time_point=self.time_point[i])
             model_values = []
             params_combination = copy.deepcopy(self.params_combination)
@@ -77,15 +76,29 @@ class BayesianCalibration:
             max_params_over_time.append(max_params)
             
             params_at_max_prob = np.array(max_params_over_time)
+            print(params_at_max_prob)
             with open('params_at_max_prob.txt', 'w') as file:
                 file.writelines('\t'.join(str(item) for item in row) + '\n' for row in  params_at_max_prob[:-1])
                 file.write('\t'.join(str(item) for item in params_at_max_prob[-1]))
-        self.max_params_over_time = max_params_over_time
+            
+            optimize_result = op.optimize(model,t_0,self.time_point[i],initial_values,op.bounds_dr)
+            optim_folder = op.optim_folder
+            optimized_param = [optimize_result[key] for key in self.params_info.keys()]
+            optimized_params.append(optimized_param)
+            params_optimized = np.array(optimized_params)
+            print(params_optimized)
+            with open('params_optimized.txt','w') as file:
+                file.writelines('\t'.join(str(item) for item in row) + '\n' for row in params_optimized[:-1])
+                file.write('\t'.join(str(item) for item in params_optimized[-1]))
         
+        self.max_params_over_time = max_params_over_time
+        self.optimized_params = optimized_params
+    
     def do_plot(self):
         plt.figure(figsize=(12,6))
         for i, key in enumerate(self.params_info.keys()):
-            plt.plot(self.time_point, [params[i] for params in self.max_params_over_time], label = f"Evolution of {key}", marker = 'o')
+            plt.plot(self.time_point, [params[i] for params in self.max_params_over_time], label = f"Calibration of {key}", marker = 'o')
+            plt.plot(self.time_point, [params[i] for params in self.optimized_params], label = f"Optimization of {key}", marker = 'x')
         plt.xlabel('Time')
         plt.ylabel('Parameter Value')
         plt.title('Evolution of Parameters in Maximum Posterior Probability')
