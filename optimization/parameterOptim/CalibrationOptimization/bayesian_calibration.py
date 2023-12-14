@@ -85,6 +85,11 @@ class BayesianCalibration:
             
             optimize_result = op.optimize(model,t_0,self.time_point[i],optimized_params[-1],bounds_reducted[-1])
             optim_folder = op.optim_folder
+
+            for key, value in optimize_result.items():
+                if 'pre exponential' in key:
+                    optimize_result[key] = np.log(value)
+            
             optimized_param = [optimize_result[key] for key in self.params_info.keys()]
             optimized_params.append(optimized_param)
             params_optimized = np.array(optimized_params)
