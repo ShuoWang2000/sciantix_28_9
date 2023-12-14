@@ -65,8 +65,8 @@ Initial composition Kr85m4 = 0
 Initial composition Kr85m5 = 0
 Initial composition Kr85m6 = 0
 Initial stoichiometry deviation[0] = 0
-0	801.237	-0.181	-0.181	
-0.037	827.488	-0.181	-0.181	
+0	801.418	0	0	
+0.037	827.669	0	0	
 sf_resolution_rate = 1
 sf_trapping_rate = 1
 sf_nucleation_rate = 1
@@ -75,7 +75,7 @@ sf_temperature = 1
 sf_fission_rate = 1
 sf_cent_parameter = 1
 sf_helium_production_rate = 1
-sf_diffusivity_preExp = 25.0788
+sf_diffusivity_preExp = 4.22499
 sf_diffusivity_actEnergy = 1
 sf_henryConst_preExp = 1
 sf_henryConst_actEnergy = 1
