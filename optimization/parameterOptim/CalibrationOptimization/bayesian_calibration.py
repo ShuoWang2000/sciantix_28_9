@@ -51,6 +51,7 @@ class BayesianCalibration:
         optim_folder = 0
         optimized_params = [[info['mu'] for info in self.params_info.values()]]
         for i in range(1,len(self.time_point)):
+            print(f'current time:{self.time_point[i]}')
             if self.online == True:
                 t_0 = self.time_point[i-1]
             else:
@@ -76,7 +77,7 @@ class BayesianCalibration:
             max_params_over_time.append(max_params)
             
             params_at_max_prob = np.array(max_params_over_time)
-            print(params_at_max_prob)
+            print(f'calibrated params(max prob): {params_at_max_prob}')
             with open('params_at_max_prob.txt', 'w') as file:
                 file.writelines('\t'.join(str(item) for item in row) + '\n' for row in  params_at_max_prob[:-1])
                 file.write('\t'.join(str(item) for item in params_at_max_prob[-1]))
@@ -86,7 +87,7 @@ class BayesianCalibration:
             optimized_param = [optimize_result[key] for key in self.params_info.keys()]
             optimized_params.append(optimized_param)
             params_optimized = np.array(optimized_params)
-            print(params_optimized)
+            print(f'optimized params: {params_optimized}')
             with open('params_optimized.txt','w') as file:
                 file.writelines('\t'.join(str(item) for item in row) + '\n' for row in params_optimized[:-1])
                 file.write('\t'.join(str(item) for item in params_optimized[-1]))

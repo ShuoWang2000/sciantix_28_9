@@ -64,6 +64,7 @@ class Optimization:
         destination_name = 'Optimization'
         if not os.path.exists(destination_name):
             os.makedirs(destination_name)
+            os.chdir(destination_name)
         else:
             os.chdir(destination_name)
 
