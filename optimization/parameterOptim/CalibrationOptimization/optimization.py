@@ -83,7 +83,7 @@ class Optimization:
 
         self.sciantix_optim_path = model._independent_sciantix_folder(self.optim_container_path,previous_optim_path, previous_x, current_x)
 
-        cost_function = self._create_cost_function(model)
+        cost_function = self._create_cost_function(model,current_x)
 
         if self.method == 'som':
             optimizer_result = self._optimize_som(cost_function, initial_values)
@@ -96,7 +96,7 @@ class Optimization:
         
         return optimizer_result
 
-    def _create_cost_function(self, model:UserModel):
+    def _create_cost_function(self, model:UserModel, current_x):
         """
         Creates a cost function for optimization.
 
@@ -111,12 +111,12 @@ class Optimization:
             def cost_function(params):
                 optimized_params = {key: param for key, param in zip(self.params_info.keys(), params)}
                 # optimized_params = dict(zip(self.params_info.keys(), params))
-                model_error = model.calculate_error(self.sciantix_optim_path,optimized_params)
+                model_error = model.calculate_error(self.sciantix_optim_path,optimized_params,current_x)
 
                 return model_error
         if self.method == 'dr':
             def cost_function(**params):
-                model_error = model.calculate_error(self.sciantix_optim_path, params)
+                model_error = model.calculate_error(self.sciantix_optim_path, params, current_x)
                 model_error = -model_error
             
                 return model_error

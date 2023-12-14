@@ -202,9 +202,9 @@ class UserModel:
             
         return interpolate_FR_info
     
-    def calculate_error(self, sciantix_folder_path, params:dict):
+    def calculate_error(self, sciantix_folder_path, params:dict, time_end):
         output_sciantix = self._sciantix(sciantix_folder_path,params)
-        FR_interpolated_info = self._exp(output_sciantix[0])
+        FR_interpolated_info = self._exp(time_end)
 
         error = np.sum(np.abs(output_sciantix[2] - FR_interpolated_info[1]))
         return error
