@@ -7,7 +7,7 @@ from user_model import UserModel
 import os, shutil, copy
 from itertools import product
 from optimization import Optimization
-
+from domain_reduction import DomainReduction
 class BayesianCalibration:
     def __init__(
         self,
@@ -38,7 +38,7 @@ class BayesianCalibration:
 
         self.params_combination = product(*[info['range'] for info in self.params_info.values()])
 
-    def bayesian_calibration(self, model:UserModel, op:Optimization):
+    def bayesian_calibration(self, model:UserModel, op:Optimization, dr:DomainReduction):
         posteriors = [self.joint_prior.flatten()]
         max_params_over_time = [[info['mu'] for info in self.params_info.values()]]
         destination_name = 'Bayesian_calibration'
@@ -47,9 +47,10 @@ class BayesianCalibration:
         else:
             shutil.rmtree(destination_name)
             os.makedirs(destination_name)
-        initial_values = np.array([info['mu'] for info in self.params_info.values()])
+        # initial_values = np.array([info['mu'] for info in self.params_info.values()])
         optim_folder = 0
         optimized_params = [[info['mu'] for info in self.params_info.values()]]
+        bounds_reducted = [op.bounds_dr]
         for i in range(1,len(self.time_point)):
             print(f'current time:{self.time_point[i]}')
             if self.online == True:
@@ -82,7 +83,7 @@ class BayesianCalibration:
                 file.writelines('\t'.join(str(item) for item in row) + '\n' for row in  params_at_max_prob[:-1])
                 file.write('\t'.join(str(item) for item in params_at_max_prob[-1]))
             
-            optimize_result = op.optimize(model,t_0,self.time_point[i],initial_values,op.bounds_dr)
+            optimize_result = op.optimize(model,t_0,self.time_point[i],optimized_params[-1],bounds_reducted[-1])
             optim_folder = op.optim_folder
             optimized_param = [optimize_result[key] for key in self.params_info.keys()]
             optimized_params.append(optimized_param)
@@ -91,7 +92,10 @@ class BayesianCalibration:
             with open('params_optimized.txt','w') as file:
                 file.writelines('\t'.join(str(item) for item in row) + '\n' for row in params_optimized[:-1])
                 file.write('\t'.join(str(item) for item in params_optimized[-1]))
-        
+            
+            bound = dr.transform(op)
+            bounds_reducted.append(bound)
+
         self.max_params_over_time = max_params_over_time
         self.optimized_params = optimized_params
     

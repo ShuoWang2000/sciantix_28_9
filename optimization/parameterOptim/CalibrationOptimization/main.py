@@ -4,16 +4,18 @@ from user_model import UserModel  # Make sure to import your classes
 from optimization import Optimization
 from domain_reduction import DomainReduction
 from bayesian_calibration import BayesianCalibration
-import matplotlib
+import matplotlib, os
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 def main():
 
+    
     # Initialize the UserModel with appropriate parameters
     model = UserModel(
         case_name='test_Talip2014_1600K',
-        params=np.array(['helium diffusivity pre exponential', 'helium diffusivity activation energy']),
+        # params=np.array(['helium diffusivity pre exponential', 'helium diffusivity activation energy']),
+        params=np.array(['helium diffusivity pre exponential']),
         params_initial_values=np.array([0,1.0]),
         params_stds=np.array([1.526,0.1])
     ) 
@@ -23,7 +25,7 @@ def main():
     stds = np.array([info['sigma'] for info in params_info.values()])
 
     
-    time_points = np.linspace(0, max(model.time_exp), 101)
+    time_points = np.linspace(0, max(model.time_exp), 11)
     # Perform Bayesian Calibration
     bc = BayesianCalibration(
         keys=keys,
@@ -42,76 +44,33 @@ def main():
         online=True
     )
     
+    dr = DomainReduction()
+    dr.initialize(op)
     
     bc.bayesian_calibration(model, op)
-    bc.do_plot(model)
-    # Set up the Optimization
-#     optim_online = Optimization(kind='online', method='som', keys=keys, initial_values=initial_values, stds=stds)
-#     optim_offline = Optimization(kind='offline', method='som', keys=keys, initial_values=initial_values, stds=stds)
 
-#     # Initialize Domain Reduction
-#     domain_reduction_online = DomainReduction()
-#     domain_reduction_offline = DomainReduction()
-#     domain_reduction_online.initialize(optim_online)
-#     domain_reduction_offline.initialize(optim_offline)
+    fr_optim = np.zeros_like(time_points)
+    fr_exp = np.zeros_like(time_points)
+    variables = np.array(["Time (h)","Temperature (K)","He fractional release (/)", "He release rate (at/m3 s)"])
 
-#     # Arrays for storing results
-#     time_points = model.t
-#     # real_output = np.array([model.black_box_function(model.n0_true,model.lambda_true, t, model.measure_std_relative) for t in time_points])  # Fill in the black_box_function args
-#     real_output = model.real_output
-#     online_output = np.zeros_like(time_points)
-#     offline_output = np.zeros_like(time_points)
-#     online_params = np.ones((len(time_points), len(keys)))
-#     offline_params = np.ones_like(online_params)
-#     updated_domain_online = {key:(bound[0], bound[1]) for key, bound in zip(keys, domain_reduction_online.bounds_original)}
-#     updated_domain_offline = {key:(bound[0], bound[1]) for key, bound in zip(keys, domain_reduction_offline.bounds_original)}
-
-#     # Main optimization loop
-#     for i in range(1,len(time_points)):
-#         t = time_points[i]
-#         # Online Optimization
-#         current_values_online = online_params[i - 1]
-#         optimized_params_online = optim_online.optimize(model, t, current_values_online, updated_domain_online)
-#         online_params[i] = [optimized_params_online[key] for key in keys]
-#         online_output[i] = model.numerical_model(optimized_params_online['sf_n0'], optimized_params_online['sf_lambda'], model.n0_model, model.lambda_model, t)
-#         updated_domain_online = domain_reduction_online.transform(optim_online)
-
-#         # Offline Optimization
-#         current_values_offline = offline_params[i - 1]
-#         optimized_params_offline = optim_offline.optimize(model, t, current_values_offline, updated_domain_offline)
-#         offline_params[i] = [optimized_params_offline[key] for key in keys]
-#         offline_output[i] = model.numerical_model(optimized_params_offline['sf_n0'], optimized_params_offline['sf_lambda'], model.n0_model, model.lambda_model, t)
-#         updated_domain_offline = domain_reduction_offline.transform(optim_offline)
-
-#     # Visualization of results
-#     t_tild = model.t_tild
-#     calibrated_params = bc.max_params_over_time
-#     plot_results(t_tild, real_output, online_output, offline_output, online_params, offline_params, calibrated_params, trues, keys)
+    for i in range(1, len(time_points)):
+        for folder in os.listdir(op.optim_container_path):
+            folder_path = os.path.join(op.optim_container_path, folder)
+            if f'to_{np.round(time_points[i],3)}' in folder:
+                os.chdir(folder_path)
+                fr_optim[i] = model.get_selected_variables_value_from_output_last_line(variables, 'output.txt')[2]
+                fr_exp[i] = model._exp(time_points[i])[1]
     
-# def plot_results(time_points, real_output, online_output, offline_output, online_params, offline_params, calibrated_params,true_params, keys):
-#     # Plotting the outputs
-#     plt.figure(figsize=(12, 6))
-#     plt.scatter(time_points, real_output, label='Real Output', color='green')
-#     plt.plot(time_points, online_output, label='Online Optimized Output', color='blue')
-#     plt.plot(time_points, offline_output, label='Offline Optimized Output', color='red')
-#     plt.xlabel('Time')
-#     plt.ylabel('Output')
-#     plt.title('Model Outputs Comparison')
-#     plt.legend()
-#     plt.show()
+    data = np.vstack((time_points, fr_optim, fr_exp))
+    data = data.T 
+    with open('optim_data.txt', 'w') as file:
+            file.writelines('\t'.join(str(item) for item in row) + '\n' for row in data[:-1])
+            file.write('\t'.join(str(item) for item in data[-1]))
+        
 
-#     # Plotting the parameters
-#     for i, key in enumerate(keys):
-#         plt.figure(figsize=(12, 6))
-#         plt.plot(time_points, online_params[:, i], label=f'Online Optimized {key}', color='blue')
-#         plt.plot(time_points, offline_params[:, i], label=f'Offline Optimized {key}', color='red')
-#         plt.plot(time_points,[params[i] for params in calibrated_params], label=f'Bayesican Calibrated {key}')
-#         plt.plot([0,1],[true_params[i],true_params[i]], color='green', linestyle='--', label=f'True {key}')
-#         plt.xlabel('Time')
-#         plt.ylabel(f'Parameter Value ({key})')
-#         plt.title(f'Parameter {key} Optimization Comparison')
-#         plt.legend()
-#         plt.show()
+    
+
+
 
 if __name__ == "__main__":
     main()
