@@ -47,7 +47,7 @@ def main():
     dr = DomainReduction()
     dr.initialize(op)
     
-    bc.bayesian_calibration(model, op)
+    bc.bayesian_calibration(model, op,dr)
 
     fr_optim = np.zeros_like(time_points)
     fr_exp = np.zeros_like(time_points)
