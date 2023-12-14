@@ -1,9 +1,7 @@
 import numpy as np
-import os
-import shutil
+import os, shutil, copy, subprocess
 from contextlib import contextmanager
-import copy
-import subprocess
+
 
 class UserModel:
     """
@@ -37,7 +35,8 @@ class UserModel:
         self.input_initial_conditions_path = os.path.join(self.case_folder_path, 'input_initial_conditions.txt')
         self.input_scaling_factor_path = os.path.join(self.case_folder_path, 'input_scaling_factors.txt')
         self.input_history_path = os.path.join(self.case_folder_path, 'input_history.txt')
-        self.sciantix_path = os.path.join('/home/posh/sciantix_28_9/bin','sciantix.x')
+        # self.sciantix_path = os.path.join('/home/posh/sciantix_28_9/bin','sciantix.x')
+        self.sciantix_path = os.path.join('/mnt/e/DeskTop/course in polimi/Thesis/sciantix_cioniiiiii/sciantix_28_9/bin', 'sciantix.x')
 
         with self.change_directory(self.case_folder_path, self.code_container):
             exp_fr_data  = np.genfromtxt("Talip2014_release_data.txt",dtype = 'float',delimiter='\t')
@@ -69,12 +68,13 @@ class UserModel:
         self.time_history_original = self.history_original[:,0]
         self.temperature_history_original = self.history_original[:,1]
 
-    def _independent_sciantix_folder(self, destination, t_start, t_end):
+    def _independent_sciantix_folder(self, destination,optim_folder, t_0, t_1):
         """
         Build a standard sciantix folder with newest sciantix.x and the input files for selected case.
         Return the folder's path
         """
-
+        t_start = np.round(t_0,3)
+        t_end = np.round(t_1,3)
         forlder_name = f'from_{t_start}_to_{t_end}'
 
         with self.change_directory(destination, self.code_container):
@@ -84,16 +84,85 @@ class UserModel:
                 shutil.rmtree(forlder_name)
                 os.makedirs(forlder_name)
             os.chdir(forlder_name)
+            current_sciantix_path = os.getcwd()
             shutil.copy(self.input_settings_path, os.getcwd())
             shutil.copy(self.input_scaling_factor_path, os.getcwd())
             shutil.copy(self.input_initial_conditions_path, os.getcwd())
             shutil.copy(self.sciantix_path, os.getcwd())
             shutil.copy(self.input_history_path, os.getcwd())
+            history_original = copy.deepcopy(self.history_original)
+
+            history_info = self._filter_and_interpolate_matrix(history_original, t_start, t_end) - t_start
+            ois = 7.8e-30
+            if t_start != 0:
+                with self.change_directory(optim_folder, current_sciantix_path):
+                    initial_conditions = np.array([
+                        "He produced (at/m3)",
+                        "He in grain (at/m3)", 
+                        "He in intragranular solution (at/m3)", 
+                        "He in intragranular bubbles (at/m3)", 
+                        "He at grain boundary (at/m3)", 
+                        "He released (at/m3)",
+                        "Grain radius (m)",
+                        "Intragranular bubble concentration (bub/m3)",
+                        "Intragranular bubble radius (m)"
+                    ])
+                    initial_conditions_value = self.get_selected_variables_value_from_output_last_line(initial_conditions, 'output.txt')
+                FR_interpolated = self._exp(t_start)[1]
+                initial_conditions_info = {
+                    initial_conditions[i]: initial_conditions_value[i] for i in range(len(initial_conditions))
+                }
+                initial_conditions_info["He released (at/m3)"] = FR_interpolated * initial_conditions_info['He produced (at/m3)']
+                initial_conditions_info["He in grain (at/m3)"] = (1 - FR_interpolated) * initial_conditions_info['He produced (at/m3)']
+                initial_conditions_info["He in intragranular solution (at/m3)"] = initial_conditions_info["He in grain (at/m3)"] * initial_conditions_info["He in intragranular solution (at/m3)"] / (initial_conditions_info["He in intragranular solution (at/m3)"] + initial_conditions_info["He in intragranular bubbles (at/m3)"])
+                initial_conditions_info["He in intragranular bubbles (at/m3)"] = initial_conditions_info["He in grain (at/m3)"] - initial_conditions_info["He in intragranular solution (at/m3)"]
+                intragranular_bubble_volume = initial_conditions_info['He in intragranular bubbles (at/m3)']/initial_conditions_info['Intragranular bubble concentration (bub/m3)'] * ois
+                initial_conditions_info['Intragranular bubble radius (m)'] = 0.620350491 * (intragranular_bubble_volume ** (1/3))
+                
+                
+                keyword1 = "#	initial He (at/m3) produced, intragranular, intragranular in solution, intragranular in bubbles, grain boundary, released"
+                ic_new = np.array([
+                    initial_conditions_info['He produced (at/m3)'],
+                    initial_conditions_info['He in grain (at/m3)'],
+                    initial_conditions_info['He in intragranular solution (at/m3)'],
+                    initial_conditions_info['He in intragranular bubbles (at/m3)'],
+                    initial_conditions_info['He at grain boundary (at/m3)'],
+                    initial_conditions_info['He released (at/m3)']
+                ])
+                keyword2 = "#	initial grain radius (m)"
+                ic_grainRadius = initial_conditions_info['Grain radius (m)']
+                
+                keyword3 = "#	initial intragranular bubble concentration (at/m3), radius (m)"
+                ic_intraGrainBubble = np.array([
+                    initial_conditions_info['Intragranular bubble concentration (bub/m3)'],
+                    initial_conditions_info['Intragranular bubble radius (m)']
+                ])
+                
+                with open("input_initial_conditions.txt", 'r') as file:
+                    lines = file.readlines()
+
+                for i, line in enumerate(lines):
+                    if keyword1 in line:
+                        ic_1 = '\t'.join(map(str, ic_new))
+                        lines[i - 1] = ic_1 + '\n'
+                    elif keyword2 in line:
+                        ic_2 = str(ic_grainRadius)
+                        lines[i - 1] = ic_2 + '\n'
+                    elif keyword3 in line:
+                        ic_3 = '  '.join(map(str, ic_intraGrainBubble))
+                        lines[i - 1] = ic_3 + '\n'
+                with open("input_initial_conditions.txt", 'w') as file:
+                    file.writelines(lines)
+            
+            with open('input_history.txt', 'w') as file:
+                file.writelines('\t'.join(str(item) for item in row) + '\n' for row in history_info[:-1])
+                file.write('\t'.join(str(item) for item in history_info[-1]))
+        
+        
         return os.path.join(destination, forlder_name)
     
-    
 
-    def _sciantix(self, destination, t_start, t_end, params:dict):
+    def _sciantix(self, sciantix_folder_path, params:dict):
         """
         return(np.array):
             *t_end
@@ -102,12 +171,7 @@ class UserModel:
             *RR @ t_end
         """
         scaling_factors = copy.deepcopy(self.scaling_factors)
-        history_original = copy.deepcopy(self.history_original)
-        t_0 = np.round(t_start,3)
-        t_1 = np.round(t_end,3)
-        history_info = self._filter_and_interpolate_matrix(history_original, t_0, t_1)
-        sciantix_folder_path = self._independent_sciantix_folder(destination, t_0, t_1)
-        
+
         with self.change_directory(sciantix_folder_path, self.code_container):
             for key, value in params.items():
                 if 'pre exponential' in key:
@@ -117,9 +181,6 @@ class UserModel:
                 for key, value in scaling_factors.items():
                         file.write(f'{value}\n')
                         file.write(f'# scaling factor - {key}\n')	
-            with open('input_history.txt', 'w') as file:
-                file.writelines('\t'.join(str(item) for item in row) + '\n' for row in history_info[:-1])
-                file.write('\t'.join(str(item) for item in history_info[-1]))
 
             subprocess.run(['./sciantix.x'])
             variables = ["Time (h)","Temperature (K)","He fractional release (/)", "He release rate (at/m3 s)"]
@@ -140,8 +201,8 @@ class UserModel:
             
         return interpolate_FR_info
     
-    def calculate_error(self, destination_folder, t_start, t_end, params:dict):
-        output_sciantix = self._sciantix(destination_folder, t_start, t_end,params)
+    def calculate_error(self, sciantix_folder_path, params:dict):
+        output_sciantix = self._sciantix(sciantix_folder_path,params)
         FR_interpolated_info = self._exp(output_sciantix[0])
         error = np.sum(np.abs(output_sciantix[2] - FR_interpolated_info[1])/np.abs(FR_interpolated_info[1]))
         return error
@@ -195,8 +256,6 @@ class UserModel:
         return variable_selected_value
 
 
-
-
     @staticmethod
     def linear_interpolate(point1, point2, target_time):
         """
@@ -230,7 +289,6 @@ class UserModel:
                 return matrix[i], matrix[i + 1]
         return None
     
-
     def _filter_and_interpolate_matrix(self ,matrix, start_time, end_time):
         """
         Create a new matrix filtered by start and end times, including interpolated values at these times.

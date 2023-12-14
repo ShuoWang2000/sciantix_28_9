@@ -58,19 +58,16 @@ class inputOutput():
 			if keyword1 in line:
 				ic_1 = '\t'.join(map(str, ic_new))
 				lines[i - 1] = ic_1 + '\n'  
-
 				break
 		for j, line in enumerate(lines):
 			if keyword2 in line:
 				ic_2 = ic_grainRadius
 				lines[j - 1] = str(ic_2) + '\n'  
-
 				break
 		for k, line in enumerate(lines):
 			if keyword3 in line:
 				ic_3 = '  '.join(map(str, ic_intraGrainBubbleRadius))
 				lines[k - 1] = ic_3 + '\n'  
-
 				break
 
 		with open("input_initial_conditions.txt", 'w') as file:

@@ -1,6 +1,8 @@
 import numpy as np
 from scipy.optimize import Bounds, minimize
 from bayes_opt import BayesianOptimization, UtilityFunction, SequentialDomainReductionTransformer
+import os, shutil, copy
+from user_model import UserModel
 
 class Optimization:
     """
@@ -13,12 +15,11 @@ class Optimization:
         bounds_global (Bounds or dict): Global bounds for the optimization parameters.
     """
 
-    def __init__(self, kind='online', method='som', keys=None, initial_values=None, stds=None):
+    def __init__(self, method='som', keys=None, initial_values=None, stds=None, online:bool = False):
         """
         Initializes the Optimization object.
 
         Args:
-            kind (str): The optimization kind, either 'online' or 'offline'.
             method (str): The optimization method, either 'som' or 'dr'.
             keys (np.ndarray): Names of the parameters to optimize.
             initial_values (np.ndarray): Initial guess values for the parameters.
@@ -27,7 +28,7 @@ class Optimization:
         if keys is None or initial_values is None or stds is None:
             raise ValueError("keys, initial_values, and stds must not be None.")
 
-        self.kind = kind
+        self.online = online
         self.method = method
         self.params_info = self._create_params_info(keys, initial_values, stds)
         self.bounds_global = self._create_bounds_global(self.method)
@@ -47,7 +48,7 @@ class Optimization:
         else:
             raise ValueError("Invalid method specified")
 
-    def optimize(self, model, current_x, initial_values, initial_bounds_dr):
+    def optimize(self, model:UserModel,previous_x, current_x, initial_values, initial_bounds_dr):
         """
         Performs optimization using the specified method.
 
@@ -60,8 +61,16 @@ class Optimization:
         Returns:
             dict: Optimized parameter values.
         """
+        destination_name = 'Optimization'
+        if not os.path.exists(destination_name):
+            os.makedirs(destination_name)
+        else:
+            shutil.rmtree(destination_name)
+            os.makedirs(destination_name)
 
-        cost_function = self._create_cost_function(model, current_x)
+        self.sciantix_optim_path = model._independent_sciantix_folder(destination_name, previous_x, current_x)
+
+        cost_function = self._create_cost_function(model)
 
         if self.method == 'som':
             optimizer_result = self._optimize_som(cost_function, initial_values)
@@ -70,9 +79,11 @@ class Optimization:
         else:
             raise ValueError("Invalid optimization method.")
         self.optimizer_result = optimizer_result
+        model._sciantix(self.sciantix_optim_path, optimizer_result)
+        
         return optimizer_result
 
-    def _create_cost_function(self, model, current_x):
+    def _create_cost_function(self, model:UserModel):
         """
         Creates a cost function for optimization.
 
@@ -87,12 +98,12 @@ class Optimization:
             def cost_function(params):
                 optimized_params = {key: param for key, param in zip(self.params_info.keys(), params)}
                 # optimized_params = dict(zip(self.params_info.keys(), params))
-                model_error = model.calculate_error(optimized_params, current_x, self.kind)
+                model_error = model.calculate_error(self.sciantix_optim_path,optimized_params)
 
                 return model_error
         if self.method == 'dr':
             def cost_function(**params):
-                model_error = model.calculate_error(params, current_x, self.kind)
+                model_error = model.calculate_error(self.sciantix_optim_path, params)
                 model_error = -model_error
             
                 return model_error
@@ -144,3 +155,7 @@ class Optimization:
             np.ndarray: An array of optimized parameter values.
         """
         return np.array([value for value in self.optimizer_result.values()])
+
+    @property
+    def optim_folder(self):
+        return self.sciantix_optim_path
