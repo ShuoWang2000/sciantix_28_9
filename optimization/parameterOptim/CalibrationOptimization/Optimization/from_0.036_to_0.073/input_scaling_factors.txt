@@ -14,7 +14,7 @@
 # scaling factor - cent parameter
 1.0
 # scaling factor - helium production rate
-1.2812597197216244
+1.625135552821995
 # scaling factor - helium diffusivity pre exponential
 1.0
 # scaling factor - helium diffusivity activation energy

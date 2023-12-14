@@ -4,7 +4,7 @@
 #	initial Xe (at/m3) produced, intragranular, intragranular in solution, intragranular in bubbles, grain boundary, released
 0.0	0.0	0.0	0.0	0.0	0.0
 #	initial Kr (at/m3) produced, intragranular, intragranular in solution, intragranular in bubbles, grain boundary, released
-1.683e+24	1.0216998453887366e+24	1.0216998453886762e+24	60397977600.0	0.0	6.613001546112632e+23
+1.683e+24	1.0216998453887366e+24	1.021699845388676e+24	60532195328.0	0.0	6.613001546112632e+23
 #	initial He (at/m3) produced, intragranular, intragranular in solution, intragranular in bubbles, grain boundary, released
 2.08e+20  1.0e-9
 # initial intragranular bubble concentration (at/m3), radius (m)
