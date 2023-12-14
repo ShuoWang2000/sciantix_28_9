@@ -135,7 +135,8 @@ class Optimization:
         Returns:
             dict: Optimized parameter values.
         """
-        solution = minimize(cost_function, initial_values, bounds=self.bounds_global, method='Powell')
+        solution = minimize(cost_function, initial_values, bounds=self.bounds_global,method = 'Nelder-Mead')
+        print(solution.fun)
         return {key: value for key, value in zip(self.params_info.keys(), solution.x)}
 
     def _optimize_dr(self, cost_function, initial_bounds_dr):
