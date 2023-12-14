@@ -70,12 +70,14 @@ class Optimization:
 
         self.optim_container_path = os.getcwd()
 
-        previous_optim_path = 0
-        for folder_name in os.listdir(self.optim_container_path):
-            folder_path = os.path.join(self.optim_container_path, folder_name)
-            if os.path.isdir(folder_path) and f'to_{np.round(previous_x,3)}' in folder_name:
-                previous_optim_path = folder_path
-                break
+        if previous_x == 0:
+            previous_optim_path = 0
+        else:
+            for folder_name in os.listdir(self.optim_container_path):
+                folder_path = os.path.join(self.optim_container_path, folder_name)
+                if os.path.isdir(folder_path) and f'to_{np.round(previous_x,3)}' in folder_name:
+                    previous_optim_path = folder_path
+                    break
 
 
 

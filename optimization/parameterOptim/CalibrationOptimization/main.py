@@ -62,7 +62,8 @@ def main():
                 fr_exp[i] = model._exp(time_points[i])[1]
     
     data = np.vstack((time_points, fr_optim, fr_exp))
-    data = data.T 
+    data = data.T
+    os.chdir(model.code_container)
     with open('optim_data.txt', 'w') as file:
             file.writelines('\t'.join(str(item) for item in row) + '\n' for row in data[:-1])
             file.write('\t'.join(str(item) for item in data[-1]))

@@ -92,7 +92,8 @@ class UserModel:
             shutil.copy(self.input_history_path, os.getcwd())
             history_original = copy.deepcopy(self.history_original)
 
-            history_info = self._filter_and_interpolate_matrix(history_original, t_start, t_end) - t_start
+            history_info = self._filter_and_interpolate_matrix(history_original, t_start, t_end)
+            history_info[:,0] = history_info[:,0] - t_start
             ois = 7.8e-30
             if t_start != 0:
                 with self.change_directory(optim_folder, current_sciantix_path):
@@ -204,7 +205,7 @@ class UserModel:
     def calculate_error(self, sciantix_folder_path, params:dict):
         output_sciantix = self._sciantix(sciantix_folder_path,params)
         FR_interpolated_info = self._exp(output_sciantix[0])
-        
+
         error = np.sum(np.abs(output_sciantix[2] - FR_interpolated_info[1]))
         return error
 
