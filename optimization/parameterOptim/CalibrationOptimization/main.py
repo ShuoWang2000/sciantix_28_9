@@ -69,7 +69,7 @@ def main():
             file.write('\t'.join(str(item) for item in data[-1]))
         
 
-    shutil.rmtree(op.optim_folder)
+    shutil.rmtree('Optimization')
     shutil.rmtree('Bayesian_calibration')
 
 
