@@ -31,13 +31,13 @@ def main():
         keys=keys,
         mean_values=initial_values, 
         stds=stds,
-        sampling_number=5, 
+        sampling_number=101, 
         time_point=time_points, 
         online= True
     )
     
     op = Optimization(
-        method='dr',
+        method='som',
         keys=keys,
         initial_values=initial_values,
         stds=stds,
