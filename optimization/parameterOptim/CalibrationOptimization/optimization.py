@@ -156,7 +156,7 @@ class Optimization:
                                          allow_duplicate_points=True)
         
         acq_function = UtilityFunction(kind='ucb')
-        optimizer.maximize(init_points=10, n_iter=50, acquisition_function=acq_function)
+        optimizer.maximize(init_points=10, n_iter=100, acquisition_function=acq_function)
 
         return {key: optimizer.max['params'][key] for key in self.params_info.keys()}
 
