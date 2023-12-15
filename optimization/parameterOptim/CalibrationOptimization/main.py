@@ -31,7 +31,7 @@ def main():
         keys=keys,
         mean_values=initial_values, 
         stds=stds,
-        sampling_number=101, 
+        sampling_number=5, 
         time_point=time_points, 
         online= True
     )
