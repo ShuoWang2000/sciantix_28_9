@@ -149,15 +149,23 @@ class Optimization:
         solution_slsqp = minimize(cost_function, initial_values, bounds=self.bounds_global,method = 'SLSQP')
         solution_powell = minimize(cost_function, initial_values, bounds=self.bounds_global,method = 'Powell')
         error_info = {
-            solution_nm:solution_nm.fun,
-            solution_slsqp:solution_slsqp.fun,
-            solution_powell:solution_powell.fun
+            'Nelder-Mead': solution_nm.fun,
+            'SLSQP': solution_slsqp.fun,
+            'Powell': solution_powell.fun
         }
-        
-        solution = min(error_info, key = error_info.get)
 
-        print(f'current_error:{solution.fun}')
-        return {key: value for key, value in zip(self.params_info.keys(), solution.x)}, solution.fun
+        # Find the method with the minimum error
+        best_method = min(error_info, key=error_info.get)
+
+        # Retrieve the best solution based on the method
+        best_solution = {
+            'Nelder-Mead': solution_nm,
+            'SLSQP': solution_slsqp,
+            'Powell': solution_powell
+        }[best_method]
+
+        print(f'current_error:{best_solution.fun}')
+        return {key: value for key, value in zip(self.params_info.keys(), best_solution.x)}, best_solution.fun
 
     def _optimize_dr(self, cost_function, initial_bounds_dr):
         """
