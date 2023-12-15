@@ -79,18 +79,22 @@ class Optimization:
                     previous_optim_path = folder_path
                     break
 
-
-
         self.sciantix_optim_path = model._independent_sciantix_folder(self.optim_container_path,previous_optim_path, previous_x, current_x)
-
         cost_function = self._create_cost_function(model,current_x)
-
         if self.method == 'som':
-            optimizer_result = self._optimize_som(cost_function, initial_values)
+            optimizer_result, error = self._optimize_som(cost_function, initial_values)
         elif self.method == 'dr':
-            optimizer_result = self._optimize_dr(cost_function, initial_bounds_dr)
+            optimizer_result, error = self._optimize_dr(cost_function, initial_bounds_dr)
+            observed = model._exp(current_x)
+            relative_std = observed[2]/observed[1]
+            iteration = 0
+            while error > relative_std and iteration <3:
+                optimizer_result, error = self._optimize_dr(cost_function, initial_bounds_dr)
+                iteration = iteration + 1
+
         else:
             raise ValueError("Invalid optimization method.")
+        
         self.optimizer_result = optimizer_result
         model._sciantix(self.sciantix_optim_path, optimizer_result)
         
@@ -134,10 +138,21 @@ class Optimization:
 
         Returns:
             dict: Optimized parameter values.
+            float: error
         """
-        solution = minimize(cost_function, initial_values, bounds=self.bounds_global,method = 'Nelder-Mead')
-        print(solution.fun)
-        return {key: value for key, value in zip(self.params_info.keys(), solution.x)}
+        solution_nm = minimize(cost_function, initial_values, bounds=self.bounds_global,method = 'Nelder-Mead')
+        solution_slsqp = minimize(cost_function, initial_values, bounds=self.bounds_global,method = 'SLSQP')
+        solution_powell = minimize(cost_function, initial_values, bounds=self.bounds_global,method = 'Powell')
+        error_info = {
+            solution_nm:solution_nm.fun,
+            solution_slsqp:solution_slsqp.fun,
+            solution_powell:solution_powell.fun
+        }
+        
+        solution = min(error_info, key = error_info.get)
+
+        print(f'current_error:{solution.fun}')
+        return {key: value for key, value in zip(self.params_info.keys(), solution.x)}, solution.fun
 
     def _optimize_dr(self, cost_function, initial_bounds_dr):
         """
@@ -149,6 +164,7 @@ class Optimization:
 
         Returns:
             dict: Optimized parameter values.
+            float: error
         """
         bounds_transformer = SequentialDomainReductionTransformer()
         optimizer = BayesianOptimization(f=cost_function, pbounds=initial_bounds_dr, 
@@ -156,9 +172,9 @@ class Optimization:
                                          allow_duplicate_points=True)
         
         acq_function = UtilityFunction(kind='ucb')
-        optimizer.maximize(init_points=10, n_iter=100, acquisition_function=acq_function)
-
-        return {key: optimizer.max['params'][key] for key in self.params_info.keys()}
+        optimizer.maximize(init_points=10, n_iter=50, acquisition_function=acq_function)
+        print(f'current_error:{optimizer.max["target"]}')
+        return {key: optimizer.max['params'][key] for key in self.params_info.keys()}, optimizer.max['target']
 
     @property
     def value_optimized(self):

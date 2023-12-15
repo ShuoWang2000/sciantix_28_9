@@ -28,5 +28,5 @@ plt.scatter(optim_exp[:,0], optim_exp[:,2], facecolor = 'none', edgecolors='r',m
 plt.xlabel('time / h')
 plt.ylabel('fraction release / -')
 plt.legend()
-plt.title('Logarithm scaling factor')
+plt.title('Fraction release')
 plt.show()

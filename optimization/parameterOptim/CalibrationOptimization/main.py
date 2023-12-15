@@ -4,7 +4,7 @@ from user_model import UserModel  # Make sure to import your classes
 from optimization import Optimization
 from domain_reduction import DomainReduction
 from bayesian_calibration import BayesianCalibration
-import matplotlib, os
+import matplotlib, os, shutil
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
@@ -69,7 +69,8 @@ def main():
             file.write('\t'.join(str(item) for item in data[-1]))
         
 
-    
+    shutil.rmtree(op.optim_folder)
+    shutil.rmtree('Bayesian_calibration')
 
 
 
