@@ -174,7 +174,7 @@ class Optimization:
         acq_function = UtilityFunction(kind='ucb')
         optimizer.maximize(init_points=10, n_iter=50, acquisition_function=acq_function)
         print(f'current_error:{optimizer.max["target"]}')
-        return {key: optimizer.max['params'][key] for key in self.params_info.keys()}, optimizer.max['target']
+        return {key: optimizer.max['params'][key] for key in self.params_info.keys()}, np.abs(optimizer.max['target'])
 
     @property
     def value_optimized(self):
