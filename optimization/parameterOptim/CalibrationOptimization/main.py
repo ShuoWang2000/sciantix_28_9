@@ -37,7 +37,7 @@ def main():
     )
     
     op = Optimization(
-        method='som',
+        method='dr',
         keys=keys,
         initial_values=initial_values,
         stds=stds,
