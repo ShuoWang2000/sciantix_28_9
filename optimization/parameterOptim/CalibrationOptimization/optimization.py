@@ -89,7 +89,7 @@ class Optimization:
             relative_std = observed[2]/observed[1]
             iteration = 0
             while error > relative_std and iteration <3:
-                for key, value in initial_bounds_dr:
+                for key, value in initial_bounds_dr.items():
                     initial_bounds_dr[key] = np.array([
                         max(value[0] - 0.3 * np.abs(value[0]), self.bounds_global[key][0]),
                         min(value[1] + 0.3 * np.abs(value[1]), self.bounds_global[key][1])
