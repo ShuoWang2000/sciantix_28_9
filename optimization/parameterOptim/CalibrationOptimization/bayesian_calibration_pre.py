@@ -62,7 +62,7 @@ class BayesianCalibration:
             model_values = []
             params_combination = copy.deepcopy(self.params_combination)
             for combination in params_combination:
-                params = {key:value for key, value in zip(self.params_grid.keys(),combination)}
+                params = {key:value for key, value in zip(self.params_info.keys(),combination)}
                 model_value = model._sciantix(sciantix_folder_path, params)[2]
                 model_values.append(model_value)
             likelihood = norm.pdf(observed[1], loc = model_values, scale = observed[2])

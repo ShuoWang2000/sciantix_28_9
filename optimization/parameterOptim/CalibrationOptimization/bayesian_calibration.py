@@ -1,6 +1,5 @@
 import numpy as np
 import matplotlib
-matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from scipy.stats import norm
 from user_model import UserModel
@@ -22,17 +21,17 @@ class BayesianCalibration:
         }
         self.params_info = {key:params_info[key] for key in sorted(params_info)}
         self.update_joint_prior()
-        print([info['range'] for info in self.params_info.values()])
+        # print([info['range'] for info in self.params_info.values()])
 
     def update_joint_prior(self):
         """Update the joint prior based on current parameter ranges."""
-        self.params_combination = product(*[info['range'] for info in self.params_info.values()])
-        priors = [norm.pdf(grid, loc=info['mu'], scale=info['sigma']) 
-                  for grid, info in zip(self.params_combination, self.params_info.values())]
-        joint_prior = np.ones(len(priors))
+        params_grid = np.meshgrid(*[info['range'] for info in self.params_info.values()], indexing = 'ij')
+        self.params_grid = {key : grid for key, grid in zip(self.params_info.keys(), params_grid)}
+        priors = [norm.pdf(grid, loc = info['mu'], scale = info['sigma']) for grid, info in zip(self.params_grid.values(), self.params_info.values())]
+        joint_prior = np.ones(priors[0].shape)
         for prior in priors:
             joint_prior *= prior
-        self.joint_prior = joint_prior / np.sum(joint_prior)
+        self.joint_prior = joint_prior/np.sum(joint_prior)
 
     def update_parameter_sampling(self, posterior):
         """Update the parameter range based on the current posterior distribution."""
@@ -58,14 +57,14 @@ class BayesianCalibration:
             t_0 = self.time_point[i-1] if self.online else 0
             sciantix_folder_path = model._independent_sciantix_folder('Bayesian_calibration',optim_folder, t_0, self.time_point[i])
             observed = model._exp(time_point=self.time_point[i])
-
             model_values = self.compute_model_values(model, sciantix_folder_path)
-            print(len(model_values))
+            # print('model values length')
+            # print(len(model_values))
             likelihood = norm.pdf(observed[1], loc=model_values, scale=observed[2])
             posterior = self.bayesian_update(posteriors[-1], likelihood)
             posteriors.append(posterior)
-            print(posterior)
-            print(posterior.size)
+            # print(posterior)
+            # print(posterior.size)
             # Update the sampling based on the new posterior
             self.update_parameter_sampling(posteriors[-1])
             self.update_joint_prior()  # Also update the joint prior with new ranges
@@ -102,7 +101,10 @@ class BayesianCalibration:
 
     def compute_model_values(self, model, folder_path):
         model_values = []
-        for combination in self.params_combination:
+        params_combination = product(*[info['range'] for info in self.params_info.values()])
+        # print([info['range'] for info in self.params_info.values()])
+        for combination in params_combination:
+            # print(combination)
             params = {key: value for key, value in zip(self.params_info.keys(), combination)}
             model_value = model._sciantix(folder_path, params)[2]
             model_values.append(model_value)
@@ -124,16 +126,3 @@ class BayesianCalibration:
         posterior = prior * likelihood
         return posterior / np.sum(posterior)
 
-
-
-    def do_plot(self):
-        plt.figure(figsize=(12,6))
-        for i, key in enumerate(self.params_info.keys()):
-            plt.plot(self.time_point, [params[i] for params in self.max_params_over_time], label = f"Calibration of {key}", marker = 'o')
-            plt.plot(self.time_point, [params[i] for params in self.optimized_params], label = f"Optimization of {key}", marker = 'x')
-        plt.xlabel('Time')
-        plt.ylabel('Parameter Value')
-        plt.title('Evolution of Parameters in Maximum Posterior Probability')
-        plt.legend()
-        plt.grid(True)
-        plt.show()
