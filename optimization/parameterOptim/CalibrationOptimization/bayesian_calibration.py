@@ -13,14 +13,16 @@ class BayesianCalibration:
         self.time_point = time_point
         self.sampling_number = sampling_number
         self.online = online
-        self.params_info = {
+        params_info = {
             keys[i]: {
-                'range': np.random.normal(mean_values[i], stds[i], sampling_number),
+                'range':sorted(np.random.normal(mean_values[i], stds[i], sampling_number)),
                 'mu': mean_values[i],
                 'sigma': stds[i]
             } for i in range(len(keys))
         }
+        self.params_info = {key:params_info[key] for key in sorted(params_info)}
         self.update_joint_prior()
+        print([info['range'] for info in self.params_info.values()])
 
     def update_joint_prior(self):
         """Update the joint prior based on current parameter ranges."""
@@ -43,7 +45,7 @@ class BayesianCalibration:
             max_value = self.params_info[key]['range'][max_index[i]]
             # Update the range around the max_value
             # This is a simplistic approach; you'll need to adjust this logic to fit your model
-            updated_range = np.random.normal(max_value, self.params_info[key]['sigma'], self.sampling_number)
+            updated_range =sorted( np.random.normal(max_value, self.params_info[key]['sigma'], self.sampling_number))
             self.params_info[key]['range'] = updated_range
     
     def bayesian_calibration(self, model, op, dr):
@@ -58,10 +60,12 @@ class BayesianCalibration:
             observed = model._exp(time_point=self.time_point[i])
 
             model_values = self.compute_model_values(model, sciantix_folder_path)
+            print(len(model_values))
             likelihood = norm.pdf(observed[1], loc=model_values, scale=observed[2])
             posterior = self.bayesian_update(posteriors[-1], likelihood)
             posteriors.append(posterior)
-
+            print(posterior)
+            print(posterior.size)
             # Update the sampling based on the new posterior
             self.update_parameter_sampling(posteriors[-1])
             self.update_joint_prior()  # Also update the joint prior with new ranges
