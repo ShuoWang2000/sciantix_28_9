@@ -9,79 +9,66 @@ from itertools import product
 from optimization import Optimization
 from domain_reduction import DomainReduction
 class BayesianCalibration:
-    def __init__(
-        self,
-        keys:np.ndarray = None,
-        mean_values:np.ndarray = None,
-        stds:np.ndarray = None,
-        sampling_number:int = 101,
-        time_point:np.ndarray = None,
-        online: bool = False
-    ) -> None:
+    def __init__(self, keys, mean_values, stds, sampling_number, time_point, online):
         self.time_point = time_point
         self.sampling_number = sampling_number
         self.online = online
-        params_info = {
-            keys[i]: {'range': np.linspace(mean_values[i]-2*stds[i], mean_values[i]+2*stds[i],sampling_number),
-                      'mu': mean_values[i],
-                      'sigma':stds[i]
-                      } for i in range(len(keys))
+        self.params_info = {
+            keys[i]: {
+                'range': np.random.normal(mean_values[i], stds[i], sampling_number),
+                'mu': mean_values[i],
+                'sigma': stds[i]
+            } for i in range(len(keys))
         }
-        self.params_info = {key : params_info[key] for key in sorted(params_info)}
-        params_grid = np.meshgrid(*[info['range'] for info in self.params_info.values()], indexing = 'ij')
-        self.params_grid = {key : grid for key, grid in zip(self.params_info.keys(), params_grid)}
-        priors = [norm.pdf(grid, loc = info['mu'], scale = info['sigma']) for grid, info in zip(self.params_grid.values(), self.params_info.values())]
-        joint_prior = np.ones(priors[0].shape)
+        self.update_joint_prior()
+
+    def update_joint_prior(self):
+        """Update the joint prior based on current parameter ranges."""
+        params_combination = product(*[info['range'] for info in self.params_info.values()])
+        priors = [norm.pdf(grid, loc=info['mu'], scale=info['sigma']) 
+                  for grid, info in zip(params_combination, self.params_info.values())]
+        joint_prior = np.ones(len(priors))
         for prior in priors:
             joint_prior *= prior
-        self.joint_prior = joint_prior/np.sum(joint_prior)
+        self.joint_prior = joint_prior / np.sum(joint_prior)
 
-        self.params_combination = product(*[info['range'] for info in self.params_info.values()])
+    def update_parameter_sampling(self, posterior):
+        """Update the parameter range based on the current posterior distribution."""
 
-    def bayesian_calibration(self, model:UserModel, op:Optimization, dr:DomainReduction):
-        posteriors = [self.joint_prior.flatten()]
-        max_params_over_time = [[info['mu'] for info in self.params_info.values()]]
-        destination_name = 'Bayesian_calibration'
-        if not os.path.exists(destination_name):
-            os.makedirs(destination_name)
-        else:
-            shutil.rmtree(destination_name)
-            os.makedirs(destination_name)
-        # initial_values = np.array([info['mu'] for info in self.params_info.values()])
-        optim_folder = 0
-        optimized_params = [[info['mu'] for info in self.params_info.values()]]
+        # Example: Update the parameter range to values around the maximum posterior
+        reshaped_posterior = posterior.reshape(*[len(info['range']) for info in self.params_info.values()])
+        max_index = np.unravel_index(np.argmax(reshaped_posterior), reshaped_posterior.shape)
+
+        for i, key in enumerate(self.params_info):
+            max_value = self.params_info[key]['range'][max_index[i]]
+            # Update the range around the max_value
+            # This is a simplistic approach; you'll need to adjust this logic to fit your model
+            updated_range = np.random.normal(max_value, self.params_info[key]['sigma'], self.sampling_number)
+            self.params_info[key]['range'] = updated_range
+    
+    def bayesian_calibration(self, model, op, dr):
+        self.setup_directory('Bayesian_calibration')
+        posteriors, max_params_over_time, optimized_params = [self.joint_prior.flatten()], [[info['mu'] for info in self.params_info.values()]], [[info['mu'] for info in self.params_info.values()]]
         bounds_reducted = [op.bounds_dr]
-        for i in range(1,len(self.time_point)):
-            print(f'current time:{self.time_point[i]}')
-            if self.online == True:
-                t_0 = self.time_point[i-1]
-            else:
-                t_0 = 0
-            sciantix_folder_path = model._independent_sciantix_folder(destination_name, optim_folder,t_0, self.time_point[i])
+
+        for i in range(1, len(self.time_point)):
+            print(f'current time: {self.time_point[i]}')
+            t_0 = self.time_point[i-1] if self.online else 0
+            sciantix_folder_path = model._independent_sciantix_folder('Bayesian_calibration',optim_folder, 0, t_0, self.time_point[i])
             observed = model._exp(time_point=self.time_point[i])
-            model_values = []
-            params_combination = copy.deepcopy(self.params_combination)
-            for combination in params_combination:
-                params = {key:value for key, value in zip(self.params_grid.keys(),combination)}
-                model_value = model._sciantix(sciantix_folder_path, params)[2]
-                model_values.append(model_value)
-            likelihood = norm.pdf(observed[1], loc = model_values, scale = observed[2])
+
+            model_values = self.compute_model_values(model, sciantix_folder_path)
+            likelihood = norm.pdf(observed[1], loc=model_values, scale=observed[2])
             posterior = self.bayesian_update(posteriors[-1], likelihood)
             posteriors.append(posterior)
 
-            reshaped_posterior = posterior.reshape(*[len(self.params_info[key]['range']) for key in self.params_info.keys()])
-            # print(f'reshaped_posterior: {reshaped_posterior}')
-            max_index = np.unravel_index(np.argmax(reshaped_posterior), reshaped_posterior.shape)
-            # print(max_index)
-            max_params = [self.params_info[key]['range'][max_index[i]] for i, key in enumerate(self.params_info.keys())]
-            # print(max_params)
+            # Update the sampling based on the new posterior
+            self.update_parameter_sampling(posteriors[-1])
+            self.update_joint_prior()  # Also update the joint prior with new ranges
+
+            max_params = self.find_max_params(posterior)
             max_params_over_time.append(max_params)
-            
-            params_at_max_prob = np.array(max_params_over_time)
-            print(f'calibrated params(max prob): {params_at_max_prob}')
-            with open('params_at_max_prob.txt', 'w') as file:
-                file.writelines('\t'.join(str(item) for item in row) + '\n' for row in  params_at_max_prob[:-1])
-                file.write('\t'.join(str(item) for item in params_at_max_prob[-1]))
+            self.write_to_file('params_at_max_prob.txt', max_params_over_time)
             
             optimize_result = op.optimize(model,t_0,self.time_point[i],optimized_params[-1],bounds_reducted[-1])
             optim_folder = op.optim_folder
@@ -104,6 +91,37 @@ class BayesianCalibration:
         self.max_params_over_time = max_params_over_time
         self.optimized_params = optimized_params
     
+    def setup_directory(self, dirname):
+        if os.path.exists(dirname):
+            shutil.rmtree(dirname)
+        os.makedirs(dirname)
+
+    def compute_model_values(self, model, folder_path):
+        model_values = []
+        for combination in self.params_combination:
+            params = {key: value for key, value in zip(self.params_grid.keys(), combination)}
+            model_value = model._sciantix(folder_path, params)[2]
+            model_values.append(model_value)
+        return model_values
+
+    def find_max_params(self, posterior):
+        reshaped_posterior = posterior.reshape(*[len(info['range']) for info in self.params_info.values()])
+        max_index = np.unravel_index(np.argmax(reshaped_posterior), reshaped_posterior.shape)
+        return [self.params_info[key]['range'][max_index[i]] for i, key in enumerate(self.params_info.keys())]
+
+    def write_to_file(self, filename, data):
+        with open(filename, 'w') as file:
+            for row in data[:-1]:
+                file.write('\t'.join(map(str, row)) + '\n')
+            file.write('\t'.join(map(str, data[-1])))
+
+    @staticmethod
+    def bayesian_update(prior, likelihood):
+        posterior = prior * likelihood
+        return posterior / np.sum(posterior)
+
+
+
     def do_plot(self):
         plt.figure(figsize=(12,6))
         for i, key in enumerate(self.params_info.keys()):
@@ -115,8 +133,3 @@ class BayesianCalibration:
         plt.legend()
         plt.grid(True)
         plt.show()
-
-    @staticmethod
-    def bayesian_update(prior, likelihood):
-        posterior = prior * likelihood
-        return posterior/np.sum(posterior)
