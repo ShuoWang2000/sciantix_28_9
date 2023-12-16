@@ -72,7 +72,7 @@ class BayesianCalibration:
             max_params = self.find_max_params(posterior)
             max_params_over_time.append(max_params)
             self.write_to_file('params_at_max_prob.txt', max_params_over_time)
-            
+            print(f'calibrated params(max prob): \n {max_params_over_time}')
             optimize_result = op.optimize(model,t_0,self.time_point[i],optimized_params[-1],bounds_reducted[-1])
             optim_folder = op.optim_folder
 
