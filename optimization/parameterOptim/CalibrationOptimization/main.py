@@ -5,7 +5,7 @@ from optimization import Optimization
 from domain_reduction import DomainReduction
 from bayesian_calibration import BayesianCalibration
 import matplotlib, os, shutil
-matplotlib.use('TkAgg')
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 def main():
