@@ -34,18 +34,47 @@ class BayesianCalibration:
         self.joint_prior = joint_prior/np.sum(joint_prior)
 
     def update_parameter_sampling(self, posterior):
-        """Update the parameter range based on the current posterior distribution."""
+        """
+        Update the parameter range based on the current posterior distribution
+        using Monte Carlo sampling.
+        """
 
-        # Example: Update the parameter range to values around the maximum posterior
         reshaped_posterior = posterior.reshape(*[len(info['range']) for info in self.params_info.values()])
-        max_index = np.unravel_index(np.argmax(reshaped_posterior), reshaped_posterior.shape)
+        flat_reshaped_posterior = reshaped_posterior.flatten()
+        params_flat_indices = list(range(len(flat_reshaped_posterior)))
 
-        for i, key in enumerate(self.params_info):
-            max_value = self.params_info[key]['range'][max_index[i]]
-            # Update the range around the max_value
-            # This is a simplistic approach; you'll need to adjust this logic to fit your model
-            updated_range =sorted( np.random.normal(max_value, self.params_info[key]['sigma'], self.sampling_number))
-            self.params_info[key]['range'] = updated_range
+        # Normalize the posterior to create a probability distribution
+        posterior_probabilities = flat_reshaped_posterior / flat_reshaped_posterior.sum()
+
+        # Monte Carlo sampling: rejection sampling
+        new_samples = {}
+        for key in self.params_info:
+            new_samples[key] = []
+
+        for _ in range(self.sampling_number):
+            while True:
+                # Randomly choose an index based on posterior probabilities
+                chosen_index = np.random.choice(params_flat_indices, p=posterior_probabilities)
+                chosen_params = np.unravel_index(chosen_index, reshaped_posterior.shape)
+
+                # Construct parameter set from chosen index
+                sampled_params = {key: self.params_info[key]['range'][idx] 
+                                  for key, idx in zip(self.params_info.keys(), chosen_params)}
+
+                # Accept or reject the sampled parameters based on some criteria
+                # For simplicity, this example accepts all samples
+
+                accept = True
+
+                if accept:
+                    for key, value in sampled_params.items():
+                        new_samples[key].append(value)
+                    break
+
+        # Update parameter ranges with new samples
+        # new_samples = sorted(np.array(new_samples))
+        for key in self.params_info:
+            self.params_info[key]['range'] = np.array(new_samples[key])
     
     def bayesian_calibration(self, model, op, dr):
         self.setup_directory('Bayesian_calibration')
