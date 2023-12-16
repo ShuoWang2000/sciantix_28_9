@@ -111,7 +111,8 @@ class BayesianCalibration:
         return model_values
 
     def find_max_params(self, posterior):
-        reshaped_posterior = posterior.reshape(*[len(info['range']) for info in self.params_info.values()])
+        reshaped_posterior = posterior.reshape(*[len(self.params_info[key]['range']) for key in self.params_info.keys()])
+        print(reshaped_posterior)
         max_index = np.unravel_index(np.argmax(reshaped_posterior), reshaped_posterior.shape)
         return [self.params_info[key]['range'][max_index[i]] for i, key in enumerate(self.params_info.keys())]
 
