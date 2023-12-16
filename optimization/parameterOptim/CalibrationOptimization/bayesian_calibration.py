@@ -24,9 +24,9 @@ class BayesianCalibration:
 
     def update_joint_prior(self):
         """Update the joint prior based on current parameter ranges."""
-        params_combination = product(*[info['range'] for info in self.params_info.values()])
+        self.params_combination = product(*[info['range'] for info in self.params_info.values()])
         priors = [norm.pdf(grid, loc=info['mu'], scale=info['sigma']) 
-                  for grid, info in zip(params_combination, self.params_info.values())]
+                  for grid, info in zip(self.params_combination, self.params_info.values())]
         joint_prior = np.ones(len(priors))
         for prior in priors:
             joint_prior *= prior
@@ -50,11 +50,11 @@ class BayesianCalibration:
         self.setup_directory('Bayesian_calibration')
         posteriors, max_params_over_time, optimized_params = [self.joint_prior.flatten()], [[info['mu'] for info in self.params_info.values()]], [[info['mu'] for info in self.params_info.values()]]
         bounds_reducted = [op.bounds_dr]
-
+        optim_folder = 0
         for i in range(1, len(self.time_point)):
             print(f'current time: {self.time_point[i]}')
             t_0 = self.time_point[i-1] if self.online else 0
-            sciantix_folder_path = model._independent_sciantix_folder('Bayesian_calibration',optim_folder, 0, t_0, self.time_point[i])
+            sciantix_folder_path = model._independent_sciantix_folder('Bayesian_calibration',optim_folder, t_0, self.time_point[i])
             observed = model._exp(time_point=self.time_point[i])
 
             model_values = self.compute_model_values(model, sciantix_folder_path)
@@ -99,7 +99,7 @@ class BayesianCalibration:
     def compute_model_values(self, model, folder_path):
         model_values = []
         for combination in self.params_combination:
-            params = {key: value for key, value in zip(self.params_grid.keys(), combination)}
+            params = {key: value for key, value in zip(self.params_info.keys(), combination)}
             model_value = model._sciantix(folder_path, params)[2]
             model_values.append(model_value)
         return model_values
