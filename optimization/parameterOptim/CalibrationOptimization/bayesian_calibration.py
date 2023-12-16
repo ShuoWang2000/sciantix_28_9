@@ -66,13 +66,13 @@ class BayesianCalibration:
             # print(posterior)
             # print(posterior.size)
             # Update the sampling based on the new posterior
-            self.update_parameter_sampling(posteriors[-1])
-            self.update_joint_prior()  # Also update the joint prior with new ranges
+
 
             max_params = self.find_max_params(posterior)
             max_params_over_time.append(max_params)
             self.write_to_file('params_at_max_prob.txt', max_params_over_time)
             print(f'calibrated params(max prob): \n {max_params_over_time}')
+
             optimize_result = op.optimize(model,t_0,self.time_point[i],optimized_params[-1],bounds_reducted[-1])
             optim_folder = op.optim_folder
 
@@ -91,6 +91,9 @@ class BayesianCalibration:
             bound = dr.transform(op)
             bounds_reducted.append(bound)
 
+            self.update_parameter_sampling(posteriors[-1])
+            self.update_joint_prior()  # Also update the joint prior with new ranges
+        
         self.max_params_over_time = max_params_over_time
         self.optimized_params = optimized_params
     
@@ -112,7 +115,7 @@ class BayesianCalibration:
 
     def find_max_params(self, posterior):
         reshaped_posterior = posterior.reshape(*[len(self.params_info[key]['range']) for key in self.params_info.keys()])
-        print(reshaped_posterior)
+        # print(reshaped_posterior)
         max_index = np.unravel_index(np.argmax(reshaped_posterior), reshaped_posterior.shape)
         return [self.params_info[key]['range'][max_index[i]] for i, key in enumerate(self.params_info.keys())]
 
