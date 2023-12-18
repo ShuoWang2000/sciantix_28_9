@@ -11,13 +11,14 @@ from data_generation import DataGeneration
 
 
 class BayesianCalibration:
-    def __init__(self, keys, mean_values, stds, sampling_number, time_point, online):
+    def __init__(self, keys, mean_values, stds, initial_sampling_number, time_point, online, data_points_number):
         self.time_point = time_point
-        self.sampling_number = sampling_number
+        self.sampling_number = initial_sampling_number
         self.online = online
+        self.data_points_number = data_points_number
         params_info = {
             keys[i]: {
-                'range':np.linspace(mean_values[i]-3*stds[i],mean_values[i]+3* stds[i], sampling_number),
+                'range':np.linspace(mean_values[i]-3*stds[i],mean_values[i]+3* stds[i], initial_sampling_number),
                 'mu': mean_values[i],
                 'sigma': stds[i]
             } for i in range(len(keys))
