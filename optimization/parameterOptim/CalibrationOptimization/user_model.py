@@ -209,7 +209,8 @@ class UserModel:
         FR_interpolated_info = self._exp(time_end)
         RR_sciantix = output_sciantix[3]
 
-        time_and_heProduced_sciantix = self.get_selected_variables_value_from_output(['Time (h)','He produced (at/m3)' ],'output.txt')
+        with self.change_directory(sciantix_folder_path, self.code_container):
+            time_and_heProduced_sciantix = self.get_selected_variables_value_from_output(['Time (h)','He produced (at/m3)' ],'output.txt')
         dt_sciantix = time_and_heProduced_sciantix[-2,0] - time_and_heProduced_sciantix[-3,0]
         he_produced = time_and_heProduced_sciantix[-2,1]
         RR_exp = FR_interpolated_info[3] * 3600 * he_produced
