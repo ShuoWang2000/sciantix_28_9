@@ -17,7 +17,7 @@ class BayesianCalibration:
         self.online = online
         params_info = {
             keys[i]: {
-                'range':np.linspace(mean_values[i]-3*stds[i],mean_values[i]+3* stds[i], sampling_number)),
+                'range':np.linspace(mean_values[i]-3*stds[i],mean_values[i]+3* stds[i], sampling_number),
                 'mu': mean_values[i],
                 'sigma': stds[i]
             } for i in range(len(keys))
@@ -25,7 +25,7 @@ class BayesianCalibration:
         self.params_info = {key:params_info[key] for key in sorted(params_info)}
         params_grid = np.meshgrid(*[info['range'] for info in self.params_info.values()], indexing = 'ij')
         self.params_grid = {key : grid for key, grid in zip(self.params_info.keys(), params_grid)}
-        priors = [ for grid, info in zip(self.params_grid.values(), self.params_info.values())]
+        priors = [np.ones_like(info['range'])/len(info['range']) for info in self.params_info.values()]
         joint_prior = np.ones(priors[0].shape)
         for prior in priors:
             joint_prior *= prior
