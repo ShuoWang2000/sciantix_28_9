@@ -213,9 +213,9 @@ class UserModel:
             time_and_heProduced_sciantix = self.get_selected_variables_value_from_output(['Time (h)','He produced (at/m3)' ],'output.txt')
         dt_sciantix = time_and_heProduced_sciantix[-2,0] - time_and_heProduced_sciantix[-3,0]
         he_produced = time_and_heProduced_sciantix[-2,1]
-        RR_exp = FR_interpolated_info[3] * 3600 * he_produced
+        RR_exp = FR_interpolated_info[3] / 3600 * he_produced
 
-        error = np.sum(np.abs(output_sciantix[2] - FR_interpolated_info[1])/np.abs(FR_interpolated_info[1]) + np.abs(RR_sciantix - RR_exp)/RR_exp)
+        error = (np.abs(output_sciantix[2] - FR_interpolated_info[1])/np.abs(FR_interpolated_info[1]) + np.abs(RR_sciantix - RR_exp)/RR_exp)
         print(RR_sciantix, RR_exp)
         return error
 
