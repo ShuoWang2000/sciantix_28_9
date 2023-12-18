@@ -54,15 +54,24 @@ class DataGeneration:
         return np.array(new_points)
 
     def _estimate_probabilities(self):
+        # nbrs = NearestNeighbors(n_neighbors=2).fit(self.data)
+        # estimated_probs = []
+        # for point in self.new_points:
+        #     distances, indices = nbrs.kneighbors([point])
+        #     point_a_index = indices[0, 0]
+        #     point_b_index = nbrs.kneighbors([self.data[point_a_index]], return_distance=False)[0, 1]
+        #     std_dev = np.linalg.norm(self.data[point_a_index] - self.data[point_b_index]) / 2
+        #     prob = self.probabilities[point_a_index] * stats.norm.pdf(distances[0, 0], 0, std_dev)
+        #     estimated_probs.append(prob)
+        
         nbrs = NearestNeighbors(n_neighbors=2).fit(self.data)
         estimated_probs = []
+
         for point in self.new_points:
             distances, indices = nbrs.kneighbors([point])
-            point_a_index = indices[0, 0]
-            point_b_index = nbrs.kneighbors([self.data[point_a_index]], return_distance=False)[0, 1]
-            std_dev = np.linalg.norm(self.data[point_a_index] - self.data[point_b_index]) / 2
-            prob = self.probabilities[point_a_index] * stats.norm.pdf(distances[0, 0], 0, std_dev)
+            prob = np.mean([self.probabilities[idx] for idx in indices[0]])
             estimated_probs.append(prob)
+
         return np.array(estimated_probs) / sum(estimated_probs)
 
     @property
