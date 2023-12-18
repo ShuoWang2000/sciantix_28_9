@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from user_model import UserModel  # Make sure to import your classes
 from optimization import Optimization
 from domain_reduction import DomainReduction
-from bayesian_calibration import BayesianCalibration
+from bayesian_calibration_pa import BayesianCalibration
 import matplotlib, os, shutil
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -31,7 +31,7 @@ def main():
         keys=keys,
         mean_values=initial_values, 
         stds=stds,
-        sampling_number=201, 
+        sampling_number=101, 
         time_point=time_points, 
         online= True
     )
