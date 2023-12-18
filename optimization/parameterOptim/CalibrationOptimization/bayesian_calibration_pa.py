@@ -37,14 +37,6 @@ class BayesianCalibration:
 
         self.points = np.array([[point for point in combination] for combination in params_combination])
 
-    
-    def update_joint_prior(self, data_generator: DataGeneration):
-        """Update the joint prior based on current parameter ranges."""
-        return data_generator.data_generated
-
-    def update_parameter_sampling(self, data_generator:DataGeneration):
-        return data_generator.probabilities_generated
-
 
     def bayesian_calibration(self, model, op, dr):
         self.setup_directory('Bayesian_calibration')
@@ -93,8 +85,6 @@ class BayesianCalibration:
             data_generator = DataGeneration(points_over_time[-1], posteriors_over_time[-1], self.data_points_number)
             new_points = data_generator.data_generated
             new_probabilities = data_generator.probabilities_generated
-            print(new_points)
-            print(new_probabilities)
             priors_over_time.append(new_probabilities)
             points_over_time.append(new_points)
         
