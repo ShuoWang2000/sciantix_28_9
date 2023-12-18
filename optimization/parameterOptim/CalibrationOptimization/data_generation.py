@@ -54,16 +54,28 @@ class DataGeneration:
     #         new_points.append(new_point)
     #     return np.array(new_points)
 
-    
-    def _generate_new_points(self,exploration_factor=0.1):
+
+    def _generate_new_points(self,initial_factor=0.1, threshold = 0.75):
         """
         Generate new points with a balance between following the original probabilities and exploring the space.
 
-        :param exploration_factor: Determines the degree of random exploration in point generation.
+        :param initial_factor: Initial exploration factor.
+        :param threshold: Density threshold to adjust the exploration factor.
         """
         kmeans = KMeans(n_clusters=self.number_of_optimal_clusters, random_state=0).fit(self.data)
         labels = kmeans.labels_
+        cluster_counts = np.bincount(labels)
 
+
+        # Calculate the density of each cluster
+        cluster_density = cluster_counts / np.sum(cluster_counts)
+
+        # Adjust the exploration factor if any cluster is denser than the threshold
+        if any(density > threshold for density in cluster_density):
+            exploration_factor =  initial_factor * 1.5  # Increase by 50%
+        else:
+            exploration_factor =  initial_factor
+        
         # Adjusting cluster weights
         adjusted_weights = [np.sqrt(prob) for prob in self.probabilities]
         total_weight = sum(adjusted_weights)
