@@ -86,7 +86,7 @@ class BayesianCalibration:
             bound = dr.transform(op)
             bounds_reducted.append(bound)
 
-            data_generator = DataGeneration(points_over_time[-1], posteriors_over_time[-1])
+            data_generator = DataGeneration(points_over_time[-1], posteriors_over_time[-1], 201)
             new_points = data_generator.data_generated
             new_probabilities = data_generator.probabilities_generated
             print(new_points)

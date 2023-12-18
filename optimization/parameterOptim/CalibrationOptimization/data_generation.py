@@ -55,7 +55,7 @@ class DataGeneration:
     #     return np.array(new_points)
 
     
-    def _generate_new_points(self,exploration_factor=0.2):
+    def _generate_new_points(self,exploration_factor=0.1):
         """
         Generate new points with a balance between following the original probabilities and exploring the space.
 
