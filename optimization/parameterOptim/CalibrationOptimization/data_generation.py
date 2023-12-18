@@ -36,22 +36,60 @@ class DataGeneration:
         distances = np.abs(self.wcss - line)
         return np.argmax(distances) + 1
 
-    def _generate_new_points(self):
+    # def _generate_new_points(self):
+    #     kmeans = KMeans(n_clusters=self.number_of_optimal_clusters, random_state=0).fit(self.data)
+    #     labels = kmeans.labels_
+    #     cluster_weights = [0] * self.number_of_optimal_clusters
+    #     for label, prob in zip(labels, self.probabilities):
+    #         cluster_weights[label] += prob
+
+    #     new_points = []
+    #     for _ in range(self.number_of_new_points):
+    #         cluster_index = random.choices(range(self.number_of_optimal_clusters), weights=cluster_weights, k=1)[0]
+    #         cluster_points = self.data[labels == cluster_index]
+    #         min_vals = np.min(cluster_points, axis=0)
+    #         max_vals = np.max(cluster_points, axis=0)
+    #         new_point = [random.uniform(min_val, max_val) for min_val, max_val in zip(min_vals, max_vals)]
+    #         new_points.append(new_point)
+    #     return np.array(new_points)
+
+    
+    def _generate_new_points(self,exploration_factor=0.5):
+        """
+        Generate new points with a balance between following the original probabilities and exploring the space.
+
+        :param exploration_factor: Determines the degree of random exploration in point generation.
+        """
         kmeans = KMeans(n_clusters=self.number_of_optimal_clusters, random_state=0).fit(self.data)
         labels = kmeans.labels_
+
+        # Adjusting cluster weights
+        adjusted_weights = [np.sqrt(prob) for prob in self.probabilities]
+        total_weight = sum(adjusted_weights)
         cluster_weights = [0] * self.number_of_optimal_clusters
-        for label, prob in zip(labels, self.probabilities):
-            cluster_weights[label] += prob
+        for label, weight in zip(labels, adjusted_weights):
+            cluster_weights[label] += weight/total_weight
 
         new_points = []
         for _ in range(self.number_of_new_points):
-            cluster_index = random.choices(range(self.number_of_optimal_clusters), weights=cluster_weights, k=1)[0]
+            if random.random() < exploration_factor:
+                # Random exploration
+                cluster_index = random.choice(range(self.number_of_optimal_clusters))
+            else:
+                # Weighted selection
+                cluster_index = random.choices(range(self.number_of_optimal_clusters), weights=cluster_weights, k=1)[0]
+
             cluster_points = self.data[labels == cluster_index]
             min_vals = np.min(cluster_points, axis=0)
             max_vals = np.max(cluster_points, axis=0)
             new_point = [random.uniform(min_val, max_val) for min_val, max_val in zip(min_vals, max_vals)]
             new_points.append(new_point)
+
         return np.array(new_points)
+
+
+
+
 
     def _estimate_probabilities(self):
         # nbrs = NearestNeighbors(n_neighbors=2).fit(self.data)
@@ -85,3 +123,4 @@ class DataGeneration:
     @property
     def pdf_generated(self):
         return self.new_pdf
+    
