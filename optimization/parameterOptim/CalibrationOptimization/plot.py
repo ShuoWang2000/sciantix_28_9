@@ -11,7 +11,7 @@ params_optimized = np.genfromtxt('params_optimized.txt')
 optim_exp = np.genfromtxt('optim_data.txt')
 
 # params = params_optimized.shape[1]
-params = 1
+params = params_at_max_prob.ndim
 if params == 1:
     plt.plot(optim_exp[:,0], params_at_max_prob, color = 'b', label = 'bayesian_calibration')
     plt.scatter(optim_exp[:,0], params_at_max_prob, color = 'b', marker='o')

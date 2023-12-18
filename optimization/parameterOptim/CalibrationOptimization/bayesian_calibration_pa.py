@@ -54,8 +54,6 @@ class BayesianCalibration:
 
             model_values = self.compute_model_values(model, sciantix_folder_path, points_over_time[-1])
             likelihood = norm.pdf(observed[1], loc=model_values, scale=observed[2])
-            print(likelihood)
-            print(priors_over_time[-1])
             posterior = self.bayesian_update(priors_over_time[-1], likelihood)
             posteriors_over_time.append(posterior)
 
