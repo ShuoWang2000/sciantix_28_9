@@ -17,7 +17,7 @@ class BayesianCalibration:
         self.online = online
         params_info = {
             keys[i]: {
-                'range':sorted(np.random.normal(mean_values[i], stds[i], sampling_number)),
+                'range':np.linspace(mean_values[i]-3*stds[i],mean_values[i]+3* stds[i], sampling_number)),
                 'mu': mean_values[i],
                 'sigma': stds[i]
             } for i in range(len(keys))
@@ -25,7 +25,7 @@ class BayesianCalibration:
         self.params_info = {key:params_info[key] for key in sorted(params_info)}
         params_grid = np.meshgrid(*[info['range'] for info in self.params_info.values()], indexing = 'ij')
         self.params_grid = {key : grid for key, grid in zip(self.params_info.keys(), params_grid)}
-        priors = [norm.pdf(grid, loc = info['mu'], scale = info['sigma']) for grid, info in zip(self.params_grid.values(), self.params_info.values())]
+        priors = [ for grid, info in zip(self.params_grid.values(), self.params_info.values())]
         joint_prior = np.ones(priors[0].shape)
         for prior in priors:
             joint_prior *= prior
@@ -66,7 +66,7 @@ class BayesianCalibration:
             max_params = self.find_max_params(posterior, points_over_time[-1])
             max_params_over_time.append(max_params)
             self.write_to_file('params_at_max_prob.txt', max_params_over_time)
-            print(f'calibrated params(max prob): \n {max_params_over_time}')
+            print(f'calibrated params(max prob): \n {max_params_over_time[-1]}')
 
             optimize_result = op.optimize(model,t_0,self.time_point[i],optimized_params[-1],bounds_reducted[-1])
             optim_folder = op.optim_folder
@@ -78,7 +78,7 @@ class BayesianCalibration:
             optimized_param = [optimize_result[key] for key in self.params_info.keys()]
             optimized_params.append(optimized_param)
             params_optimized = np.array(optimized_params)
-            print(f'optimized params: {params_optimized}')
+            print(f'optimized params:\n {params_optimized[-1]}')
             with open('params_optimized.txt','w') as file:
                 file.writelines('\t'.join(str(item) for item in row) + '\n' for row in params_optimized[:-1])
                 file.write('\t'.join(str(item) for item in params_optimized[-1]))
@@ -86,10 +86,11 @@ class BayesianCalibration:
             bound = dr.transform(op)
             bounds_reducted.append(bound)
 
-            data_generator = DataGeneration(points_over_time[-1], posteriors_over_time[-1],501)
+            data_generator = DataGeneration(points_over_time[-1], posteriors_over_time[-1])
             new_points = data_generator.data_generated
             new_probabilities = data_generator.probabilities_generated
-            
+            print(new_points)
+            print(new_probabilities)
             priors_over_time.append(new_probabilities)
             points_over_time.append(new_points)
         
