@@ -216,7 +216,7 @@ class UserModel:
         RR_exp = FR_interpolated_info[3] / 3600 * he_produced
 
         error = (np.abs(output_sciantix[2] - FR_interpolated_info[1])/np.abs(FR_interpolated_info[1]) + np.abs(RR_sciantix - RR_exp)/RR_exp)
-        print(RR_sciantix, RR_exp)
+        # print(RR_sciantix, RR_exp)
         return error
 
     @staticmethod
