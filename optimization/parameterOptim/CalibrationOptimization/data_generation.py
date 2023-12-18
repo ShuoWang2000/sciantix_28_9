@@ -55,7 +55,7 @@ class DataGeneration:
     #     return np.array(new_points)
 
     
-    def _generate_new_points(self,exploration_factor=0.1):
+    def _generate_new_points(self,exploration_factor=0.2):
         """
         Generate new points with a balance between following the original probabilities and exploring the space.
 
@@ -93,7 +93,7 @@ class DataGeneration:
 
 
     def _estimate_probabilities(self):
-        #GAUSSIAN ESTIMATE
+        #GAUSSIAN ESTIMATE  x
         #################
         
         # nbrs = NearestNeighbors(n_neighbors=2).fit(self.data)
@@ -107,26 +107,27 @@ class DataGeneration:
         #     estimated_probs.append(prob)
         
 
-        #CLOSEST ESTIMATE
+        #CLOSEST ESTIMATE √
         #######################
-        # nbrs = NearestNeighbors(n_neighbors=2).fit(self.data)
-        # estimated_probs = []
+        nbrs = NearestNeighbors(n_neighbors=2).fit(self.data)
+        estimated_probs = []
 
-        # for point in self.new_points:
-        #     distances, indices = nbrs.kneighbors([point])
-        #     prob = np.mean([self.probabilities[idx] for idx in indices[0]])
-        #     estimated_probs.append(prob)
-        # return np.array(estimated_probs) / sum(estimated_probs)
-        #INTERPOLATE ESTIMATE
+        for point in self.new_points:
+            distances, indices = nbrs.kneighbors([point])
+            prob = np.mean([self.probabilities[idx] for idx in indices[0]])
+            estimated_probs.append(prob)
+        return np.array(estimated_probs) / sum(estimated_probs)
+        
+        #INTERPOLATE ESTIMATE  x
         ###########################
-        estimated_probs = griddata(self.data, self.probabilities, self.new_points, method='linear')
-        # Handling any NaN values that may arise if new points fall outside the convex hull of original points
-        estimated_probs = np.nan_to_num(estimated_probs, nan=np.min(self.probabilities))
+        # estimated_probs = griddata(self.data, self.probabilities, self.new_points, method='linear')
+        # # Handling any NaN values that may arise if new points fall outside the convex hull of original points
+        # estimated_probs = np.nan_to_num(estimated_probs, nan=np.min(self.probabilities))
 
-        # Normalizing probabilities
-        estimated_probs /= np.sum(estimated_probs)
-        estimated_probs = estimated_probs.T
-        return estimated_probs[0]
+        # # Normalizing probabilities
+        # estimated_probs /= np.sum(estimated_probs)
+        # estimated_probs = estimated_probs.T
+        # return estimated_probs[0]
 
     @property
     def data_generated(self):
