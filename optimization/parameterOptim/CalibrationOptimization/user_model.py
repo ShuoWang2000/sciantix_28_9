@@ -61,6 +61,7 @@ class UserModel:
         self.time_exp  = exp_fr_data_sorted[:,0]
         self.FR_exp = self.moving_average(exp_fr_data_sorted[:,1],100)
         self.FR_exp_std = self.dynamic_std(exp_fr_data_sorted[:,1],100)
+        self.RR_from_FR = np.diff(self.FR_exp)/np.diff(self.time_exp)
         self.temperature_exp = exp_rr_data[:,0]
         self.RR_exp = self.moving_average(exp_rr_data[:,1],5)
         
@@ -195,7 +196,7 @@ class UserModel:
             *FR_interpolated @ time_point
             *FR_interpolated_std @ time_point
         """
-        FR_exp_info = np.vstack((self.time_exp, self.FR_exp, self.FR_exp_std)).T
+        FR_exp_info = np.vstack((self.time_exp, self.FR_exp, self.FR_exp_std, self.RR_from_FR)).T
 
         clostest_point = self.find_closest_points(FR_exp_info, time_point)
         interpolate_FR_info = self.linear_interpolate(*clostest_point, time_point)
@@ -205,8 +206,15 @@ class UserModel:
     def calculate_error(self, sciantix_folder_path, params:dict, time_end):
         output_sciantix = self._sciantix(sciantix_folder_path,params)
         FR_interpolated_info = self._exp(time_end)
+        RR_sciantix = output_sciantix[3]
 
-        error = np.sum(np.abs(output_sciantix[2] - FR_interpolated_info[1])/np.abs(FR_interpolated_info[1]))
+        time_and_heProduced_sciantix = self.get_selected_variables_value_from_output(['Time (h)','He produced (at/m3)' ],'output.txt')
+        dt_sciantix = time_and_heProduced_sciantix[-2,0] - time_and_heProduced_sciantix[-3,0]
+        he_produced = time_and_heProduced_sciantix[-2,1]
+        RR_exp = FR_interpolated_info[3] * 3600 * he_produced
+
+        error = np.sum(np.abs(output_sciantix[2] - FR_interpolated_info[1])/np.abs(FR_interpolated_info[1]) + np.abs(RR_sciantix - RR_exp)/RR_exp)
+        print(RR_sciantix, RR_exp)
         return error
 
     @staticmethod
@@ -239,21 +247,32 @@ class UserModel:
     def get_selected_variables_value_from_output_last_line(variable_selected, source_file):
         with open(source_file, 'r') as file:
             header = file.readline().strip().split('\t')
-            
-            for last_non_empty_line in reversed(file.readlines()):
-                if last_non_empty_line.strip():
-                    break
+
+            lines = [line for line in file if line.strip()]
+            last_line = lines[-1]
+            second_last_line = lines[-2] if len(lines) > 1 else None
+
+        if second_last_line:
+            # Compare time values (assuming time is in the first column)
+            if last_line.split('\t')[0] == second_last_line.split('\t')[0]:
+                chosen_line = second_last_line
+            else:
+                chosen_line = last_line
+        else:
+            chosen_line = last_line
 
         variable_positions = [header.index(var) for var in variable_selected if var in header]
-        
+
         # Optional: Warn about missing variables
         missing_vars = [var for var in variable_selected if var not in header]
         if missing_vars:
             print(f"Warning: The following variables were not found in the file and will be ignored: {missing_vars}")
 
-        # Use only the last non-empty line to create the data array
-        data = np.genfromtxt([last_non_empty_line], dtype='str', delimiter='\t')
-        variable_selected_value = data[variable_positions].astype(float)
+        # Use the chosen line to create the data array
+        data = np.genfromtxt([chosen_line], dtype='str', delimiter='\t')
+
+        # Ensure output is always a 1D array even if only one variable is selected
+        variable_selected_value = np.atleast_1d(data[variable_positions].astype(float))
         
         return variable_selected_value
 
