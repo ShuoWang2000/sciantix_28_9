@@ -61,6 +61,8 @@ class BayesianCalibration:
 
             model_values = self.compute_model_values(model, sciantix_folder_path, points_over_time[-1])
             likelihood = norm.pdf(observed[1], loc=model_values, scale=observed[2])
+            print(likelihood)
+            print(priors_over_time[-1])
             posterior = self.bayesian_update(priors_over_time[-1], likelihood)
             posteriors_over_time.append(posterior)
 
@@ -87,7 +89,7 @@ class BayesianCalibration:
             bound = dr.transform(op)
             bounds_reducted.append(bound)
 
-            data_generator = DataGeneration(points_over_time[-1], posteriors_over_time[-1], 201)
+            data_generator = DataGeneration(points_over_time[-1], posteriors_over_time[-1], self.data_points_number)
             new_points = data_generator.data_generated
             new_probabilities = data_generator.probabilities_generated
             print(new_points)
