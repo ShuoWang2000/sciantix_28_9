@@ -116,7 +116,7 @@ class DataGeneration:
         #     distances, indices = nbrs.kneighbors([point])
         #     prob = np.mean([self.probabilities[idx] for idx in indices[0]])
         #     estimated_probs.append(prob)
-
+        # return np.array(estimated_probs) / sum(estimated_probs)
         #INTERPOLATE ESTIMATE
         ###########################
         estimated_probs = griddata(self.data, self.probabilities, self.new_points, method='linear')
@@ -125,7 +125,7 @@ class DataGeneration:
 
         # Normalizing probabilities
         estimated_probs /= np.sum(estimated_probs)
-        return np.array(estimated_probs) / sum(estimated_probs)
+        return estimated_probs
 
     @property
     def data_generated(self):
