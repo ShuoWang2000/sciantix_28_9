@@ -27,7 +27,6 @@ class BayesianCalibration:
         self.params_info = {key:params_info[key] for key in sorted(params_info)}
         params_grid = np.meshgrid(*[info['range'] for info in self.params_info.values()], indexing = 'ij')
         self.params_grid = {key : grid for key, grid in zip(self.params_info.keys(), params_grid)}
-        # priors = [np.ones_like(info['range'])/len(info['range']) for info in self.params_info.values()]
         priors = [uniform.pdf(grid, loc = info['mu'] - 3*info['sigma'], scale =6* info['sigma']) for grid, info in zip(self.params_grid.values(), self.params_info.values())]
         joint_prior = np.ones(priors[0].shape)
         for prior in priors:
