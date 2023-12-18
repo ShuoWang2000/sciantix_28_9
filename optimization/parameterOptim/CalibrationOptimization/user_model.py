@@ -59,7 +59,7 @@ class UserModel:
                     print(f"Missing name for value at line {i}")
 
         self.time_exp  = exp_fr_data_sorted[:,0]
-        self.FR_exp = self.moving_average(exp_fr_data_sorted[:,1],100)
+        self.FR_exp = sorted(self.moving_average(exp_fr_data_sorted[:,1],100))
         self.FR_exp_std = self.dynamic_std(exp_fr_data_sorted[:,1],100)
         RR_from_FR = np.array([0])
         self.RR_from_FR = np.append(RR_from_FR, np.diff(self.FR_exp)/np.diff(self.time_exp))
