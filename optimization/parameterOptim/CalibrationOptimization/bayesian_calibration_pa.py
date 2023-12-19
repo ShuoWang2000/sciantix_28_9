@@ -55,7 +55,8 @@ class BayesianCalibration:
             # likelihood_fr = norm.pdf(observed[1], loc=model_values[:,0], scale=observed[2])
             # likelihood_rr = norm.pdf(observed[3], loc = model_values[:1], scale = observed[2])
             # likelihood = likelihood_fr * likelihood_rr
-            likelihood = self.comput_bivariant_likelihood(observed, model_values, observed[2])
+            # likelihood = self.comput_bivariant_likelihood(observed, model_values, observed[2])
+            likelihood = norm.pdf(observed[1], loc = model_values[:,0], scale = observed[2])
             posterior = self.bayesian_update(priors_over_time[-1], likelihood)
             posteriors_over_time.append(posterior)
 
@@ -108,29 +109,14 @@ class BayesianCalibration:
 
     def comput_bivariant_likelihood(self, observed, model_values, scale):
         # Assuming the scale for both variables is the same and there's no covariance
-        # Construct the mean vector from model predictions
-        # Make sure it's a 1D array of the correct length
         mean_vectors = np.array([model_values[:,0], model_values[:,1]]).T  # Adjust as per your data structure
-
-        # Construct the observed vector
-        # Make sure it's a 1D array of the correct length
         observed_vector = np.array([observed[1], observed[3]])  # Adjust indices as needed
-
-        # Check the length of mean_vector and observed_vector
-        if len(mean_vector) != len(observed_vector):
-            raise ValueError("Length of mean_vector and observed_vector must be the same")
-
-        # Construct the covariance matrix
-        # It should be a 2x2 matrix if mean_vector is of length 2
         covariance_matrix = np.array([[scale**2, 0], [0, scale**2]])  # Adjust as per your model
 
-        # Calculate the bivariate normal likelihood
         likelihoods = []
         for mean_vector in mean_vectors:
             likelihood = multivariate_normal.pdf(observed_vector, mean=mean_vector, cov=covariance_matrix)
             likelihoods.append(likelihood)
-
-
         return likelihoods
 
     def find_max_params(self, posterior, points):

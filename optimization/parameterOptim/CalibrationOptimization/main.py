@@ -36,7 +36,7 @@ def main():
         initial_sampling_number=51, 
         time_point=time_points, 
         online= True,
-        data_points_number=401
+        data_points_number=1000
     )
     
     op = Optimization(
