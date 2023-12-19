@@ -14,12 +14,12 @@ def main():
     # Initialize the UserModel with appropriate parameters
     model = UserModel(
         case_name='test_Talip2014_1600K',
-        params=np.array(['helium diffusivity pre exponential', 'henry constant pre exponential']),
-        params_initial_values=np.array([0,0]),
-        params_stds=np.array([1.526,1.417])
-        # params=np.array(['helium diffusivity pre exponential']),
-        # params_initial_values=np.array([0]),
-        # params_stds=np.array([1.526])
+        #params=np.array(['helium diffusivity pre exponential', 'henry constant pre exponential']),
+        #params_initial_values=np.array([0,0]),
+        #params_stds=np.array([1.526,1.417])
+        params=np.array(['helium diffusivity pre exponential']),
+        params_initial_values=np.array([0]),
+        params_stds=np.array([1.526])
     ) 
     params_info = model.params_info
     keys = np.array([key for key in params_info.keys()])
@@ -36,7 +36,7 @@ def main():
         initial_sampling_number=51, 
         time_point=time_points, 
         online= True,
-        data_points_number=2000
+        data_points_number=501
     )
     
     op = Optimization(
