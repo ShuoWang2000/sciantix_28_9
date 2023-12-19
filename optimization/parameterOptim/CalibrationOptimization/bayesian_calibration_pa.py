@@ -1,8 +1,7 @@
 import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
-from scipy.stats import norm
-from scipy.stats import uniform
+from scipy.stats import norm, uniform, multivariate_normal
 from user_model import UserModel
 import os, shutil, copy
 from itertools import product
@@ -53,9 +52,10 @@ class BayesianCalibration:
             observed = model._exp(time_point=self.time_point[i])
 
             model_values = self.compute_model_values(model, sciantix_folder_path, points_over_time[-1])
-            likelihood_fr = norm.pdf(observed[1], loc=model_values[:,0], scale=observed[2])
-            likelihood_rr = norm.pdf(observed[3], loc = model_values[:1], scale = observed[2])
-            likelihood = likelihood_fr * likelihood_rr
+            # likelihood_fr = norm.pdf(observed[1], loc=model_values[:,0], scale=observed[2])
+            # likelihood_rr = norm.pdf(observed[3], loc = model_values[:1], scale = observed[2])
+            # likelihood = likelihood_fr * likelihood_rr
+            likelihood = self.comput_bivariant_likelihood(observed, model_values, observed[2])
             posterior = self.bayesian_update(priors_over_time[-1], likelihood)
             posteriors_over_time.append(posterior)
 
@@ -105,6 +105,22 @@ class BayesianCalibration:
             model_values.append(model_value)
         model_values = np.array(model_values)
         return model_values
+
+    def comput_bivariant_likelihood(self, observed, model_values, scale):
+        # Assuming the scale for both variables is the same and there's no covariance
+        covariance_matrix = [[scale**2, 0], 
+                            [0, scale**2]]
+
+        # Construct the mean vector from model predictions
+        mean_vector = [model_values[:,0], model_values[:,1]]  # Adjust indices as needed
+
+        # Construct the observed vector
+        observed_vector = [observed[1], observed[3]]  # Adjust indices as needed
+
+        # Calculate the bivariate normal likelihood
+        likelihood = multivariate_normal.pdf(observed_vector, mean=mean_vector, cov=covariance_matrix)
+
+        return likelihood
 
     def find_max_params(self, posterior, points):
         max_index = np.argmax(posterior)
