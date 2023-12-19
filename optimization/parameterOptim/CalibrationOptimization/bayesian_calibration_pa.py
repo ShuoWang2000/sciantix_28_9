@@ -53,7 +53,9 @@ class BayesianCalibration:
             observed = model._exp(time_point=self.time_point[i])
 
             model_values = self.compute_model_values(model, sciantix_folder_path, points_over_time[-1])
-            likelihood = norm.pdf(observed[1], loc=model_values, scale=observed[2])
+            likelihood_fr = norm.pdf(observed[1], loc=model_values[:,0], scale=observed[2])
+            likelihood_rr = norm.pdf(observed[3], loc = model_values[:1], scale = observed[2])
+            likelihood = likelihood_fr * likelihood_rr
             posterior = self.bayesian_update(priors_over_time[-1], likelihood)
             posteriors_over_time.append(posterior)
 
@@ -99,8 +101,9 @@ class BayesianCalibration:
 
         for point in points:
             params = {key: value for key, value in zip(self.params_info.keys(), point)}
-            model_value = model._sciantix(folder_path, params)[2]
+            model_value = model._sciantix(folder_path, params)[2:]
             model_values.append(model_value)
+        model_values = np.array(model_values)
         return model_values
 
     def find_max_params(self, posterior, points):
