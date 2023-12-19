@@ -108,14 +108,21 @@ class BayesianCalibration:
 
     def comput_bivariant_likelihood(self, observed, model_values, scale):
         # Assuming the scale for both variables is the same and there's no covariance
-        covariance_matrix = [[scale**2, 0], 
-                            [0, scale**2]]
-
         # Construct the mean vector from model predictions
-        mean_vector = [model_values[:,0], model_values[:,1]]  # Adjust indices as needed
+        # Make sure it's a 1D array of the correct length
+        mean_vector = np.array([model_values[:,0], model_values[:,1]]).T  # Adjust as per your data structure
 
         # Construct the observed vector
-        observed_vector = [observed[1], observed[3]]  # Adjust indices as needed
+        # Make sure it's a 1D array of the correct length
+        observed_vector = np.array([observed[1], observed[3]])  # Adjust indices as needed
+
+        # Check the length of mean_vector and observed_vector
+        if len(mean_vector) != len(observed_vector):
+            raise ValueError("Length of mean_vector and observed_vector must be the same")
+
+        # Construct the covariance matrix
+        # It should be a 2x2 matrix if mean_vector is of length 2
+        covariance_matrix = np.array([[scale**2, 0], [0, scale**2]])  # Adjust as per your model
 
         # Calculate the bivariate normal likelihood
         likelihood = multivariate_normal.pdf(observed_vector, mean=mean_vector, cov=covariance_matrix)
