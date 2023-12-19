@@ -110,7 +110,7 @@ class BayesianCalibration:
         # Assuming the scale for both variables is the same and there's no covariance
         # Construct the mean vector from model predictions
         # Make sure it's a 1D array of the correct length
-        mean_vector = np.array([model_values[:,0], model_values[:,1]]).T  # Adjust as per your data structure
+        mean_vectors = np.array([model_values[:,0], model_values[:,1]]).T  # Adjust as per your data structure
 
         # Construct the observed vector
         # Make sure it's a 1D array of the correct length
@@ -125,9 +125,13 @@ class BayesianCalibration:
         covariance_matrix = np.array([[scale**2, 0], [0, scale**2]])  # Adjust as per your model
 
         # Calculate the bivariate normal likelihood
-        likelihood = multivariate_normal.pdf(observed_vector, mean=mean_vector, cov=covariance_matrix)
+        likelihoods = []
+        for mean_vector in mean_vectors:
+            likelihood = multivariate_normal.pdf(observed_vector, mean=mean_vector, cov=covariance_matrix)
+            likelihoods.append(likelihood)
 
-        return likelihood
+
+        return likelihoods
 
     def find_max_params(self, posterior, points):
         max_index = np.argmax(posterior)
