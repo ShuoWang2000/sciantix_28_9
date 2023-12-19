@@ -207,15 +207,19 @@ class UserModel:
     def calculate_error(self, sciantix_folder_path, params:dict, time_end):
         output_sciantix = self._sciantix(sciantix_folder_path,params)
         FR_interpolated_info = self._exp(time_end)
-        RR_sciantix = output_sciantix[3]
+        
+        error = np.abs(output_sciantix[2] - FR_interpolated_info[1])/np.abs(FR_interpolated_info[1])
 
-        with self.change_directory(sciantix_folder_path, self.code_container):
-            time_and_heProduced_sciantix = self.get_selected_variables_value_from_output(['Time (h)','He produced (at/m3)' ],'output.txt')
-        dt_sciantix = time_and_heProduced_sciantix[-2,0] - time_and_heProduced_sciantix[-3,0]
-        he_produced = time_and_heProduced_sciantix[-2,1]
-        RR_exp = FR_interpolated_info[3] / 3600 * he_produced
 
-        error = (np.abs(output_sciantix[2] - FR_interpolated_info[1])/np.abs(FR_interpolated_info[1]) + np.abs(RR_sciantix - RR_exp)/RR_exp)
+        ###### ALSO CONSIDER RR
+        # RR_sciantix = output_sciantix[3]
+        # with self.change_directory(sciantix_folder_path, self.code_container):
+        #     time_and_heProduced_sciantix = self.get_selected_variables_value_from_output(['Time (h)','He produced (at/m3)' ],'output.txt')
+        # dt_sciantix = time_and_heProduced_sciantix[-2,0] - time_and_heProduced_sciantix[-3,0]
+        # he_produced = time_and_heProduced_sciantix[-2,1]
+        # RR_exp = FR_interpolated_info[3] / 3600 * he_produced
+
+        # error = (np.abs(output_sciantix[2] - FR_interpolated_info[1])/np.abs(FR_interpolated_info[1]) + np.abs(RR_sciantix - RR_exp)/RR_exp)
         # print(RR_sciantix, RR_exp)
         return error
 
