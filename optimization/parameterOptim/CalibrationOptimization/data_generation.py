@@ -171,40 +171,40 @@ class DataGeneration:
 
 
 
-    # def _estimate_probabilities(self):
-    #     #GAUSSIAN ESTIMATE  x
-    #     #################
+    def _estimate_probabilities(self):
+        #GAUSSIAN ESTIMATE  x
+        #################
         
-    #     # nbrs = NearestNeighbors(n_neighbors=2).fit(self.data)
-    #     # estimated_probs = []
-    #     # for point in self.new_points:
-    #     #     distances, indices = nbrs.kneighbors([point])
-    #     #     point_a_index = indices[0, 0]
-    #     #     point_b_index = nbrs.kneighbors([self.data[point_a_index]], return_distance=False)[0, 1]
-    #     #     std_dev = np.linalg.norm(self.data[point_a_index] - self.data[point_b_index]) / 2
-    #     #     prob = self.probabilities[point_a_index] * stats.norm.pdf(distances[0, 0], 0, std_dev)
-    #     #     estimated_probs.append(prob)
+        # nbrs = NearestNeighbors(n_neighbors=2).fit(self.data)
+        # estimated_probs = []
+        # for point in self.new_points:
+        #     distances, indices = nbrs.kneighbors([point])
+        #     point_a_index = indices[0, 0]
+        #     point_b_index = nbrs.kneighbors([self.data[point_a_index]], return_distance=False)[0, 1]
+        #     std_dev = np.linalg.norm(self.data[point_a_index] - self.data[point_b_index]) / 2
+        #     prob = self.probabilities[point_a_index] * stats.norm.pdf(distances[0, 0], 0, std_dev)
+        #     estimated_probs.append(prob)
         
 
-    #     #CLOSEST ESTIMATE √
-    #     #######################
-    #     # nbrs = NearestNeighbors(n_neighbors=2).fit(self.data)
-    #     # estimated_probs = []
+        #CLOSEST ESTIMATE √
+        #######################
+        # nbrs = NearestNeighbors(n_neighbors=2).fit(self.data)
+        # estimated_probs = []
 
-    #     # for point in self.new_points:
-    #     #     distances, indices = nbrs.kneighbors([point])
-    #     #     prob = np.mean([self.probabilities[idx] for idx in indices[0]])
-    #     #     estimated_probs.append(prob)
-    #     # return np.array(estimated_probs) / sum(estimated_probs)
+        # for point in self.new_points:
+        #     distances, indices = nbrs.kneighbors([point])
+        #     prob = np.mean([self.probabilities[idx] for idx in indices[0]])
+        #     estimated_probs.append(prob)
+        # return np.array(estimated_probs) / sum(estimated_probs)
         
-    #     estimated_probs = []
-    #     for point in self.new_points:
-    #         distance = (self.data - point) ** 2
-    #         closest_index = np.argmin(distance)
-    #         prob = self.probabilities[closest_index]
-    #         estimated_probs.append(prob)
+        estimated_probs = []
+        for point in self.new_points:
+            distance = (self.data - point) ** 2
+            closest_index = np.argmin(distance)
+            prob = self.probabilities[closest_index]
+            estimated_probs.append(prob)
 
-    #     return np.array(estimated_probs) / np.sum(np.array(estimated_probs))
+        return np.array(estimated_probs) / np.sum(np.array(estimated_probs))
 
 
     def _generate_new_points(self):
@@ -218,7 +218,7 @@ class DataGeneration:
             proposed_sample = current_sample + random.uniform(-step_size, step_size)
 
             # Estimate the PDF value for the proposed sample
-            proposed_pdf_value = self._estimate_pdf_value(proposed_sample)
+            proposed_pdf_value = self._estimate_probability(proposed_sample)
 
             # Calculate acceptance probability
             current_pdf_value = self.probabilities[current_sample_index]
@@ -232,7 +232,7 @@ class DataGeneration:
         return np.array(samples)
 
 
-    def _estimate_probabilities(self, point):
+    def _estimate_probability(self, point):
         distance = (self.data - point) **2
         closest_index = np.argmin(distance)
         prob = self.probabilities[closest_index]
