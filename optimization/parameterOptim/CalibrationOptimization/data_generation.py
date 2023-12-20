@@ -170,7 +170,6 @@ class DataGeneration:
         return np.array(new_points)
 
 
-
     def _estimate_probabilities(self):
         #GAUSSIAN ESTIMATE  x
         #################
@@ -188,15 +187,27 @@ class DataGeneration:
 
         #CLOSEST ESTIMATE √
         #######################
-        nbrs = NearestNeighbors(n_neighbors=2).fit(self.data)
-        estimated_probs = []
+        # nbrs = NearestNeighbors(n_neighbors=2).fit(self.data)
+        # estimated_probs = []
 
-        for point in self.new_points:
-            distances, indices = nbrs.kneighbors([point])
-            prob = np.mean([self.probabilities[idx] for idx in indices[0]])
-            estimated_probs.append(prob)
-        return np.array(estimated_probs) / sum(estimated_probs)
+        # for point in self.new_points:
+        #     distances, indices = nbrs.kneighbors([point])
+        #     prob = np.mean([self.probabilities[idx] for idx in indices[0]])
+        #     estimated_probs.append(prob)
+        # return np.array(estimated_probs) / sum(estimated_probs)
         
+        estimated_probs = []
+        for point in self.new_points:
+            distance = np.linalg.norm(self.data - point, axis = 1)
+            closest_index = np.argmin(distance)
+            prob = self.probabilities[closest_index]
+            estimated_probs.append[prob]
+
+        return np.array(estimated_probs) / np.sum(np.array(estimated_probs))
+
+
+
+
         #INTERPOLATE ESTIMATE  x
         ###########################
         # estimated_probs = griddata(self.data, self.probabilities, self.new_points, method='linear')
