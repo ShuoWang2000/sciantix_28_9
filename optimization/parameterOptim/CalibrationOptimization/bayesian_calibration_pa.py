@@ -56,8 +56,8 @@ class BayesianCalibration:
             # likelihood_fr = norm.pdf(observed[1], loc=model_values[:,0], scale=observed[2])
             # likelihood_rr = norm.pdf(observed[3], loc = model_values[:1], scale = observed[2])
             # likelihood = likelihood_fr * likelihood_rr
-            likelihood = self.comput_bivariant_likelihood(observed, model_values, observed[2])
-            # likelihood = norm.pdf(observed[1], loc = model_values[:,0], scale = observed[2])
+            #likelihood = self.comput_bivariant_likelihood(observed, model_values, observed[2])
+            likelihood = norm.pdf(observed[1], loc = model_values[:,0], scale = observed[2])
             posterior = self.bayesian_update(priors_over_time[-1], likelihood)
             posteriors_over_time.append(posterior)
 
