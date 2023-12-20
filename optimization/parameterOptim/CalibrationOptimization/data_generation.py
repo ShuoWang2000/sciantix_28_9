@@ -168,6 +168,29 @@ class DataGeneration:
             new_points.append(new_point)
 
         return np.array(new_points)
+    
+
+    # def _generate_new_points(self):
+    #     samples = []
+
+    #     while len(samples) < self.number_of_new_points:
+    #         current_sample = random.choice(self.data)
+    #         # Propose a new sample by adding a random perturbation
+    #         proposed_sample = current_sample + random.uniform(-, step_size)
+
+    #         # Estimate the PDF value for the proposed sample
+    #         proposed_pdf_value = estimate_pdf_value(proposed_sample, pdf, points)
+
+    #         # Calculate acceptance probability
+    #         current_pdf_value = pdf.get(current_sample, estimate_pdf_value(current_sample, pdf, points))
+    #         acceptance_probability = min(1, proposed_pdf_value / current_pdf_value)
+
+    #         # Accept or reject the proposed sample
+    #         if random.random() < acceptance_probability:
+    #             current_sample = proposed_sample
+    #             samples.append(current_sample)
+
+    #     return samples
 
 
     def _estimate_probabilities(self):
@@ -198,7 +221,7 @@ class DataGeneration:
         
         estimated_probs = []
         for point in self.new_points:
-            distance = np.linalg.norm(self.data - point, axis = 1)
+            distance = (self.data - point) ** 2
             closest_index = np.argmin(distance)
             prob = self.probabilities[closest_index]
             estimated_probs.append(prob)
