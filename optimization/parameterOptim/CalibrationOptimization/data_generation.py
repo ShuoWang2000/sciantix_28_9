@@ -1,3 +1,4 @@
+import math
 import numpy as np
 import scipy.stats as stats
 from sklearn.cluster import KMeans
@@ -55,10 +56,66 @@ class DataGeneration:
     #     return np.array(new_points)
 
 
-    def _generate_new_points(self,initial_factor=0.1, threshold = 0.75):
+    # def _generate_new_points(self,initial_factor=0.1, threshold = 0.75):
+    #     """
+    #     Generate new points with a balance between following the original probabilities and exploring the space.
+
+    #     :param initial_factor: Initial exploration factor.
+    #     :param threshold: Density threshold to adjust the exploration factor.
+    #     """
+    #     kmeans = KMeans(n_clusters=self.number_of_optimal_clusters, random_state=0).fit(self.data)
+    #     labels = kmeans.labels_
+    #     cluster_counts = np.bincount(labels)
+
+
+    #     # Calculate the density of each cluster
+    #     cluster_density = cluster_counts / np.sum(cluster_counts)
+
+    #     # Adjust the exploration factor if any cluster is denser than the threshold
+    #     if any(density > threshold for density in cluster_density):
+    #         exploration_factor =  initial_factor * 1.5  # Increase by 50%
+    #     else:
+    #         exploration_factor =  initial_factor
+        
+    #     # Adjusting cluster weights
+    #     adjusted_weights = [np.sqrt(prob) for prob in self.probabilities]
+    #     total_weight = sum(adjusted_weights)
+    #     total_weight = sum(adjusted_weights)
+    #     if total_weight == 0:
+    #         # Handle the case where total weight is zero
+    #         # For example, you might assign equal weights to each cluster
+    #         cluster_weights = [1 / self.number_of_optimal_clusters] * self.number_of_optimal_clusters
+        # else:
+        #     # Proceed with your normal calculation
+        #     cluster_weights = [0] * self.number_of_optimal_clusters
+        #     for label, weight in zip(labels, adjusted_weights):
+        #         cluster_weights[label] += weight / total_weight
+        
+        # if not all(math.isfinite(w) for w in cluster_weights):
+        #     # Handle non-finite weights
+        #     # For example, you might again assign equal weights to each cluster
+        #     cluster_weights = [1 / self.number_of_optimal_clusters] * self.number_of_optimal_clusters
+
+        # new_points = []
+        # for _ in range(self.number_of_new_points):
+        #     if random.random() < exploration_factor:
+        #         # Random exploration
+        #         cluster_index = random.choice(range(self.number_of_optimal_clusters))
+        #     else:
+        #         # Weighted selection
+        #         cluster_index = random.choices(range(self.number_of_optimal_clusters), weights=cluster_weights, k=1)[0]
+
+        #     cluster_points = self.data[labels == cluster_index]
+        #     min_vals = np.min(cluster_points, axis=0)
+        #     max_vals = np.max(cluster_points, axis=0)
+        #     new_point = [random.uniform(min_val, max_val) for min_val, max_val in zip(min_vals, max_vals)]
+        #     new_points.append(new_point)
+
+        # return np.array(new_points)
+
+    def _generate_new_points(self, initial_factor=0.1, threshold=0.75):
         """
         Generate new points with a balance between following the original probabilities and exploring the space.
-
         :param initial_factor: Initial exploration factor.
         :param threshold: Density threshold to adjust the exploration factor.
         """
@@ -66,22 +123,34 @@ class DataGeneration:
         labels = kmeans.labels_
         cluster_counts = np.bincount(labels)
 
-
         # Calculate the density of each cluster
         cluster_density = cluster_counts / np.sum(cluster_counts)
 
+        # Cap extreme densities
+        max_density_cap = 0.9
+        min_density_cap = 0.1
+        cluster_density = np.clip(cluster_density, min_density_cap, max_density_cap)
+        cluster_density /= np.sum(cluster_density)  # Normalize after capping
+
         # Adjust the exploration factor if any cluster is denser than the threshold
         if any(density > threshold for density in cluster_density):
-            exploration_factor =  initial_factor * 1.5  # Increase by 50%
+            exploration_factor = initial_factor * 1.5  # Increase by 50%
         else:
-            exploration_factor =  initial_factor
-        
+            exploration_factor = initial_factor
+
         # Adjusting cluster weights
         adjusted_weights = [np.sqrt(prob) for prob in self.probabilities]
         total_weight = sum(adjusted_weights)
-        cluster_weights = [0] * self.number_of_optimal_clusters
-        for label, weight in zip(labels, adjusted_weights):
-            cluster_weights[label] += weight/total_weight
+        if total_weight == 0:
+            cluster_weights = [1 / self.number_of_optimal_clusters] * self.number_of_optimal_clusters
+        else:
+            cluster_weights = [0] * self.number_of_optimal_clusters
+            for label, weight in zip(labels, adjusted_weights):
+                cluster_weights[label] += weight / total_weight
+
+        # Check for finite weights
+        if not all(math.isfinite(w) for w in cluster_weights):
+            cluster_weights = [1 / self.number_of_optimal_clusters] * self.number_of_optimal_clusters
 
         new_points = []
         for _ in range(self.number_of_new_points):
@@ -99,8 +168,6 @@ class DataGeneration:
             new_points.append(new_point)
 
         return np.array(new_points)
-
-
 
 
 
