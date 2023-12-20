@@ -201,7 +201,7 @@ class DataGeneration:
             distance = np.linalg.norm(self.data - point, axis = 1)
             closest_index = np.argmin(distance)
             prob = self.probabilities[closest_index]
-            estimated_probs.append[prob]
+            estimated_probs.append(prob)
 
         return np.array(estimated_probs) / np.sum(np.array(estimated_probs))
 
