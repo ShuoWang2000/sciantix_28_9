@@ -209,12 +209,10 @@ class DataGeneration:
 
     def _generate_new_points(self):
         samples = []
-        pdf = {
-            self.data[i]:self.probabilities[i] for i in range(len(self.data))
-        }
         while len(samples) < self.number_of_new_points:
 
             current_sample = random.choice(self.data)
+            current_sample_index = np.where(self.data == current_sample)[0][0]
             # Propose a new sample by adding a random perturbation
             step_size = 0.1
             proposed_sample = current_sample + random.uniform(-step_size, step_size)
@@ -223,7 +221,7 @@ class DataGeneration:
             proposed_pdf_value = self._estimate_pdf_value(proposed_sample)
 
             # Calculate acceptance probability
-            current_pdf_value = pdf.get(current_sample)
+            current_pdf_value = self.probabilities[current_sample_index]
             acceptance_probability = min(1, proposed_pdf_value / current_pdf_value)
 
             # Accept or reject the proposed sample
