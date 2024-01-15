@@ -40,12 +40,14 @@ class BayesianCalibration:
 
     def bayesian_calibration(self, model, op, dr):
         self.setup_directory('Bayesian_calibration')
+        self.calibration_container_path = os.getcwd()
         max_params_over_time, optimized_params = [[info['mu'] for info in self.params_info.values()]], [[info['mu'] for info in self.params_info.values()]]
         priors_over_time = [self.joint_prior.flatten()]
         posteriors_over_time = []
         points_over_time = [self.points]
         bounds_reducted = [op.bounds_dr]
         optim_folder = 0
+        calibration_data = []
         for i in range(1, len(self.time_point)):
             print(f'current time: {self.time_point[i]}')
             t_0 = self.time_point[i-1] if self.online else 0
@@ -65,6 +67,15 @@ class BayesianCalibration:
             max_params_over_time.append(max_params)
             self.write_to_file('params_at_max_prob.txt', max_params_over_time)
             print(f'calibrated params(max prob): \n {max_params_over_time[-1]}')
+            
+            ## calculate output of the max params
+
+
+            params = {key: value for key, value in zip(self.params_info.keys(), max_params)}
+            calib_data = model._sciantix(sciantix_folder_path, params)
+            calibration_data.append(calib_data)
+            self.write_to_file('calibration_data.txt', calibration_data)
+
 
             optimize_result = op.optimize(model,t_0,self.time_point[i],optimized_params[-1],bounds_reducted[-1])
             optim_folder = op.optim_folder
@@ -100,7 +111,7 @@ class BayesianCalibration:
         
         self.max_params_over_time = max_params_over_time
         self.optimized_params = optimized_params
-    
+        self.calibration_data = calibration_data
     def setup_directory(self, dirname):
         if os.path.exists(dirname):
             shutil.rmtree(dirname)

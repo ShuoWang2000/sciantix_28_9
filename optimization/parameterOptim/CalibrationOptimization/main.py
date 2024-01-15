@@ -63,6 +63,7 @@ def main():
                 os.chdir(folder_path)
                 fr_optim[i] = model.get_selected_variables_value_from_output_last_line(variables, 'output.txt')[2]
                 fr_exp[i] = model._exp(time_points[i])[1]
+
     
     data = np.vstack((time_points, fr_optim, fr_exp))
     data = data.T

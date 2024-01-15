@@ -167,6 +167,9 @@ class UserModel:
 
     def _sciantix(self, sciantix_folder_path, params:dict):
         """
+        params:
+            *key: params name
+            *value: value
         return(np.array):
             *t_end
             *temperature @ t_end
