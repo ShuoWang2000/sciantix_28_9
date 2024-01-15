@@ -50,7 +50,7 @@ class DataGeneration:
 
         return exploration_points
 
-    def data_generated(self, exploration_factor=0.25):
+    def data_generated(self, exploration_factor=0.4):
         num_points = self.number_of_new_points
         if self._is_dense():
             exploration_points = int(num_points * exploration_factor)
