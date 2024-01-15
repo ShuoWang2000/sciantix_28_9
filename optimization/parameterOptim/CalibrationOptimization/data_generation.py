@@ -15,7 +15,7 @@ class DataGeneration:
         self.bounds = np.array(bounds)
         self.kde = gaussian_kde(self.data_points.T, weights=self.densities)
         self.number_of_new_points = number_of_new_points
-
+        self.global_bounds = np.array([[-4.578, 4.578]])
     def _is_dense(self, threshold=1):
         """
         Checks if the current points are dense based on a threshold.
@@ -26,7 +26,7 @@ class DataGeneration:
         """
         Filter points to keep only those within the specified bounds.
         """
-        within_bounds = np.all((points >= self.bounds[:, 0]) & (points <= self.bounds[:, 1]), axis=1)
+        within_bounds = np.all((points >= self.global_bounds[:, 0]) & (points <= self.global_bounds[:, 1]), axis=1)
         return points[within_bounds]
 
     def _generate_exploration_points(self, num_points):
@@ -70,7 +70,8 @@ class DataGeneration:
 
         return final_exploration_points
 
-    def data_generated(self, exploration_factor=0.2):
+    def data_generated(self, exploration_factor = 0.4):
+        # exploration_factor = 1 - np.mean([(b[1] - b[0])/(4.578*2) for b in self.bounds])
         num_points = self.number_of_new_points
         if self._is_dense():
             exploration_points = int(num_points * exploration_factor)

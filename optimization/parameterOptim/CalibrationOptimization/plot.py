@@ -71,17 +71,21 @@ with open('points_over_time.txt', 'r') as file:
         numbers = [float(num) for num in number_strings]
         points_over_time.append(numbers)
 
-plt.scatter(points_over_time[10], priors_over_time[10])
-# plt.show()
+i = 0
+while i < 10:
+    plt.scatter(points_over_time[i], priors_over_time[i]/np.max(priors_over_time[i]))
+    i = i + 1
+# plt.scatter(points_over_time[11], priors_over_time[11]/np.max(priors_over_time[0]))
+# # plt.show()
 
-plt.scatter(points_over_time[20], priors_over_time[20])
-# plt.show()
+# plt.scatter(points_over_time[21], priors_over_time[21]/np.max(priors_over_time[0]))
+# # plt.show()
 
-plt.scatter(points_over_time[30], priors_over_time[30])
-# plt.show()
+# plt.scatter(points_over_time[31], priors_over_time[31]/np.max(priors_over_time[0]))
+# # plt.show()
 
-plt.scatter(points_over_time[70], priors_over_time[70])
-# plt.show()
+# plt.scatter(points_over_time[71], priors_over_time[71]/np.max(priors_over_time[0]))
+# # plt.show()
 
-plt.scatter(points_over_time[100], priors_over_time[100])
+# plt.scatter(points_over_time[99], priors_over_time[99]/np.max(priors_over_time[0]))
 plt.show()
