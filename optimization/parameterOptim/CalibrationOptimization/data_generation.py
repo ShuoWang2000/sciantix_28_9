@@ -36,7 +36,8 @@ class DataGeneration:
         exploration_points = np.empty((0, self.data_points.shape[1]))
         min_bounds, max_bounds = self.bounds[:, 0], self.bounds[:, 1]
         
-        num_points_1 = int(num_points* (max_bounds - min_bounds)/(4.578*2))
+        # num_points_1 = int(num_points* (max_bounds - min_bounds)/(4.578*2))
+        num_points_1 = int(num_points/3)
         while exploration_points.shape[0] < num_points_1:
             remaining_points = num_points_1 - exploration_points.shape[0]
             candidate_points = np.random.uniform(min_bounds, max_bounds, (remaining_points * 2, self.data_points.shape[1]))
@@ -70,17 +71,17 @@ class DataGeneration:
 
         return final_exploration_points
 
-    def data_generated(self, exploration_factor = 0.4):
+    def data_generated(self, exploration_factor = 0.3):
         # exploration_factor = 1 - np.mean([(b[1] - b[0])/(4.578*2) for b in self.bounds])
         num_points = self.number_of_new_points
-        # if self._is_dense():
-        #     exploration_points = int(num_points * exploration_factor)
-        #     normal_points = num_points - exploration_points
-        # else:
-        #     normal_points = num_points
-        #     exploration_points = 0
-        exploration_points = int(num_points * exploration_factor)
-        normal_points = num_points - exploration_points
+        if self._is_dense():
+            exploration_points = int(num_points * exploration_factor)
+            normal_points = num_points - exploration_points
+        else:
+            normal_points = num_points
+            exploration_points = 0
+        # exploration_points = int(num_points * exploration_factor)
+        # normal_points = num_points - exploration_points
 
         # Generating points from the existing distribution
         new_points = self.kde.resample(normal_points)
