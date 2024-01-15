@@ -73,12 +73,14 @@ class DataGeneration:
     def data_generated(self, exploration_factor = 0.4):
         # exploration_factor = 1 - np.mean([(b[1] - b[0])/(4.578*2) for b in self.bounds])
         num_points = self.number_of_new_points
-        if self._is_dense():
-            exploration_points = int(num_points * exploration_factor)
-            normal_points = num_points - exploration_points
-        else:
-            normal_points = num_points
-            exploration_points = 0
+        # if self._is_dense():
+        #     exploration_points = int(num_points * exploration_factor)
+        #     normal_points = num_points - exploration_points
+        # else:
+        #     normal_points = num_points
+        #     exploration_points = 0
+        exploration_points = int(num_points * exploration_factor)
+        normal_points = num_points - exploration_points
 
         # Generating points from the existing distribution
         new_points = self.kde.resample(normal_points)
