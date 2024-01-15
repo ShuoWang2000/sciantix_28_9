@@ -72,9 +72,9 @@ with open('points_over_time.txt', 'r') as file:
         points_over_time.append(numbers)
 
 i = 0
-while i < 10:
+while i < 100:
     plt.scatter(points_over_time[i], priors_over_time[i]/np.max(priors_over_time[i]))
-    i = i + 1
+    i = i + 5
 # plt.scatter(points_over_time[11], priors_over_time[11]/np.max(priors_over_time[0]))
 # # plt.show()
 

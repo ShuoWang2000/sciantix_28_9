@@ -36,7 +36,7 @@ class DataGeneration:
         exploration_points = np.empty((0, self.data_points.shape[1]))
         min_bounds, max_bounds = self.bounds[:, 0], self.bounds[:, 1]
         
-        num_points_1 = int(num_points/2)
+        num_points_1 = int(num_points/8)
         while exploration_points.shape[0] < num_points_1:
             remaining_points = num_points_1 - exploration_points.shape[0]
             candidate_points = np.random.uniform(min_bounds, max_bounds, (remaining_points * 2, self.data_points.shape[1]))
