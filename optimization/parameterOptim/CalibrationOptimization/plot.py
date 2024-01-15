@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 
 params_at_max_prob = np.genfromtxt('params_at_max_prob.txt')
 params_optimized = np.genfromtxt('params_optimized.txt')
-
+calibration_data = np.genfromtxt('calibration_data.txt')
 optim_exp = np.genfromtxt('optim_data.txt')
 
 # params = params_optimized.shape[1]
@@ -39,6 +39,7 @@ else:
 plt.scatter(optim_exp[:,0], optim_exp[:,1], color = 'g', marker='x', label = 'optimization')
 # plt.plot(optim_exp[:,0], optim_exp[:,2], color = 'r', label = 'experimental')
 plt.scatter(optim_exp[:,0], optim_exp[:,2], facecolor = 'none', edgecolors='r',marker='o', label = 'experimental')
+plt.scatter(optim_exp[1:,0], calibration_data[:,2], color = 'black', marker='x', label = 'calibration')
 plt.xlabel('time / h')
 plt.ylabel('fraction release / -')
 plt.legend()

@@ -76,7 +76,9 @@ class DataGeneration:
         """
         Calculate the probability density of each point using KDE.
         """
-        densities = self.kde(points.T)
+        updated_kde = gaussian_kde(points.T)
+
+        densities = updated_kde(points.T)
         # Normalize to make it sum to 1, treating densities as relative probabilities
         self.normalized_densities = densities / np.sum(densities)
         return self.normalized_densities
