@@ -36,8 +36,9 @@ class DataGeneration:
         exploration_points = np.empty((0, self.data_points.shape[1]))
         min_bounds, max_bounds = self.bounds[:, 0], self.bounds[:, 1]
         
-        while exploration_points.shape[0] < num_points:
-            remaining_points = num_points - exploration_points.shape[0]
+        num_points_1 = int(num_points/2)
+        while exploration_points.shape[0] < num_points_1:
+            remaining_points = num_points_1 - exploration_points.shape[0]
             candidate_points = np.random.uniform(min_bounds, max_bounds, (remaining_points * 2, self.data_points.shape[1]))
             
             # Filter points based on distance criteria
@@ -46,9 +47,28 @@ class DataGeneration:
             filtered_points = candidate_points[distances > threshold_distance]
 
             # Append the valid points to the exploration_points array
-            exploration_points = np.vstack((exploration_points, filtered_points))[:num_points]
+            exploration_points = np.vstack((exploration_points, filtered_points))[:num_points_1]
 
-        return exploration_points
+        #### temperary
+        exploration_points_2 = np.empty((0, self.data_points.shape[1]))
+        min_bounds_2, max_bounds_2 = -4.578, 4.578
+        
+        num_points_2 = int(num_points - num_points_1)
+        while exploration_points_2.shape[0] < num_points_2:
+            remaining_points_2 = num_points_2 - exploration_points_2.shape[0]
+            candidate_points_2 = np.random.uniform(min_bounds_2, max_bounds_2, (remaining_points_2 * 2, self.data_points.shape[1]))
+            
+            # Filter points based on distance criteria
+            distances_2 = np.min(np.linalg.norm(self.data_points - candidate_points_2[:, np.newaxis], axis=2), axis=1)
+            threshold_distance_2 = np.mean(distances_2) * 0.5  # Example threshold
+            filtered_points_2 = candidate_points_2[distances_2 > threshold_distance_2]
+
+            # Append the valid points to the exploration_points array
+            exploration_points_2 = np.vstack((exploration_points_2, filtered_points_2))[:num_points_2]
+
+        final_exploration_points = np.vstack((exploration_points, exploration_points_2))
+
+        return final_exploration_points
 
     def data_generated(self, exploration_factor=0.2):
         num_points = self.number_of_new_points

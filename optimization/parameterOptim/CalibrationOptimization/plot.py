@@ -45,3 +45,43 @@ plt.ylabel('fraction release / -')
 plt.legend()
 plt.title('Fraction release')
 plt.show()
+
+
+priors_over_time = []
+with open('priors_over_time.txt', 'r') as file:
+    for line in file:
+        # Banish the brackets to the shadow realm
+        cleaned_line = line.replace('[', '').replace(']', '')
+        # Split the numbers, now free from their bracketed confines
+        number_strings = cleaned_line.split()
+
+        # Convert the string representations into the true form of floating-point numbers
+        numbers = [float(num) for num in number_strings]
+        priors_over_time.append(numbers)
+
+points_over_time = []
+with open('points_over_time.txt', 'r') as file:
+    for line in file:
+        # Banish the brackets to the shadow realm
+        cleaned_line = line.replace('[', '').replace(']', '')
+        # Split the numbers, now free from their bracketed confines
+        number_strings = cleaned_line.split()
+
+        # Convert the string representations into the true form of floating-point numbers
+        numbers = [float(num) for num in number_strings]
+        points_over_time.append(numbers)
+
+plt.scatter(points_over_time[10], priors_over_time[10])
+# plt.show()
+
+plt.scatter(points_over_time[20], priors_over_time[20])
+# plt.show()
+
+plt.scatter(points_over_time[30], priors_over_time[30])
+# plt.show()
+
+plt.scatter(points_over_time[70], priors_over_time[70])
+# plt.show()
+
+plt.scatter(points_over_time[100], priors_over_time[100])
+plt.show()
