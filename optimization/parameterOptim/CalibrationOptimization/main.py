@@ -27,16 +27,16 @@ def main():
     stds = np.array([info['sigma'] for info in params_info.values()])
 
     
-    time_points = np.linspace(0, max(model.time_exp),101)
+    time_points = np.linspace(0, max(model.time_exp),201)
     # Perform Bayesian Calibration
     bc = BayesianCalibration(
         keys=keys,
         mean_values=initial_values, 
         stds=stds,
-        initial_sampling_number=51, 
+        initial_sampling_number=501, 
         time_point=time_points, 
         online= True,
-        data_points_number=401
+        data_points_number=501
     )
     
     op = Optimization(
