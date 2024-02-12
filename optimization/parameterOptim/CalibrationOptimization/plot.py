@@ -9,7 +9,7 @@ params_at_max_prob = np.genfromtxt('params_at_max_prob.txt')
 params_optimized = np.genfromtxt('params_optimized.txt')
 calibration_data = np.genfromtxt('calibration_data.txt')
 optim_exp = np.genfromtxt('optim_data.txt')
-
+talip_data = np.genfromtxt('Talip2014_release_data.txt')
 # params = params_optimized.shape[1]
 params = params_at_max_prob.ndim
 if params == 1:
@@ -35,10 +35,12 @@ else:
         plt.show()
 
 
+plt.scatter(talip_data[:,0], talip_data[:,1], marker = '.', c = '#B3B3B3', label='Talip et al. (2014)')
 # plt.plot(optim_exp[:,0], optim_exp[:,1], color = 'g', label = 'optimization')
+
 plt.scatter(optim_exp[:,0], optim_exp[:,1], color = 'g', marker='x', label = 'optimization')
 # plt.plot(optim_exp[:,0], optim_exp[:,2], color = 'r', label = 'experimental')
-plt.scatter(optim_exp[:,0], optim_exp[:,2], facecolor = 'none', edgecolors='r',marker='o', label = 'experimental')
+plt.scatter(optim_exp[:,0], optim_exp[:,2], facecolor = 'none', edgecolors='r',marker='o', label = 'filtered exp')
 plt.scatter(optim_exp[1:,0], calibration_data[:,2], color = 'black', marker='x', label = 'calibration')
 plt.xlabel('time / h')
 plt.ylabel('fraction release / -')
@@ -72,9 +74,13 @@ with open('points_over_time.txt', 'r') as file:
         points_over_time.append(numbers)
 
 i = 0
-while i < 100:
-    plt.scatter(points_over_time[i], priors_over_time[i]/np.max(priors_over_time[i]))
-    i = i + 5
+ax = plt.figure().add_subplot(projection='3d')
+while i < 200:
+    d = np.vstack((points_over_time[i], priors_over_time[i])).T
+    d_sorted = d[d[:, 0].argsort()]
+    ax.plot(d_sorted[:,0], d_sorted[:,1]/np.max(d_sorted[:,1]), zs = optim_exp[i,0], zdir = 'x')
+    # ax.scatter(points_over_time[i], priors_over_time[i]/np.max(priors_over_time[i]), zs = optim_exp[i,0], zdir = 'x')
+    i = i + 10
 # plt.scatter(points_over_time[11], priors_over_time[11]/np.max(priors_over_time[0]))
 # # plt.show()
 
@@ -86,6 +92,11 @@ while i < 100:
 
 # plt.scatter(points_over_time[71], priors_over_time[71]/np.max(priors_over_time[0]))
 # # plt.show()
-
+ax.set_xlim(0, 3.7)
+ax.set_ylim(-4.8, 4.8)
+ax.set_zlim(0, 1.1)
+ax.set_xlabel('time')
+ax.set_ylabel('scaling factor')
+ax.set_zlabel('normalized probability')
 # plt.scatter(points_over_time[99], priors_over_time[99]/np.max(priors_over_time[0]))
 plt.show()
